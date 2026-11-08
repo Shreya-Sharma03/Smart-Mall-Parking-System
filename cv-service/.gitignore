@@ -1,0 +1,11 @@
+# CV Service generated outputs
+outputs/
+output/
+
+# Python cache & weights
+__pycache__/
+*.pyc
+*.pt
+*.onnx
+venv/
+.venv/

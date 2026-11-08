@@ -1,0 +1,259 @@
+{
+  "version": "1.1",
+  "description": "Smart Mall Parking System - Multi-Camera Slot ROI Configuration",
+  "coordinate_type": "normalized",
+  "cameras": [
+    {
+      "cameraId": "CAM-B1-01",
+      "floor": "B1",
+      "description": "Basement 1 Main Parking Concourse Camera (Covers Left Aisle and Right Aisle, 8 bays visible)",
+      "calibration_note": "B1-A09 through B1-A12 not visible in this camera FOV. Assign CAM-B1-02 to monitor those bays.",
+      "slots": [
+        {
+          "slotId": "B1-A01",
+          "description": "Front-left bay (large white crossover)",
+          "polygon": [
+            [0.0538, 0.4038],
+            [0.3170, 0.4038],
+            [0.3050, 0.6057],
+            [0.0419, 0.5951]
+          ]
+        },
+        {
+          "slotId": "B1-A02",
+          "description": "Mid-left bay (bronze sedan)",
+          "polygon": [
+            [0.0837, 0.2710],
+            [0.3589, 0.2710],
+            [0.3230, 0.4038],
+            [0.0478, 0.4038]
+          ]
+        },
+        {
+          "slotId": "B1-A03",
+          "description": "Rear-left bay (white sedan)",
+          "polygon": [
+            [0.1316, 0.1488],
+            [0.3917, 0.1541],
+            [0.3648, 0.2710],
+            [0.0897, 0.2710]
+          ]
+        },
+        {
+          "slotId": "B1-A04",
+          "description": "Back-centre-left bay (empty)",
+          "polygon": [
+            [0.3858, 0.1222],
+            [0.4994, 0.1222],
+            [0.4994, 0.2232],
+            [0.3738, 0.2232]
+          ]
+        },
+        {
+          "slotId": "B1-A05",
+          "description": "Back-centre-right bay (empty)",
+          "polygon": [
+            [0.5054, 0.1222],
+            [0.6220, 0.1222],
+            [0.6220, 0.2232],
+            [0.5054, 0.2232]
+          ]
+        },
+        {
+          "slotId": "B1-A06",
+          "description": "Rear-right bay (dark SUV)",
+          "polygon": [
+            [0.6310, 0.1435],
+            [0.7685, 0.1435],
+            [0.7865, 0.2710],
+            [0.6280, 0.2657]
+          ]
+        },
+        {
+          "slotId": "B1-A07",
+          "description": "Mid-right bay (white SUV)",
+          "polygon": [
+            [0.6220, 0.2710],
+            [0.8044, 0.2763],
+            [0.8911, 0.4463],
+            [0.6728, 0.4357]
+          ]
+        },
+        {
+          "slotId": "B1-A08",
+          "description": "Front-right bay (grey SUV)",
+          "polygon": [
+            [0.6639, 0.4410],
+            [0.9061, 0.4516],
+            [0.9988, 0.6111],
+            [0.7327, 0.6004]
+          ]
+        }
+      ]
+    },
+    {
+      "cameraId": "CAM-B1-02",
+      "floor": "B1",
+      "description": "Basement 1 Secondary Camera - Covers lower concourse bays B1-A09 through B1-A12 (needs calibration)",
+      "calibration_note": "Placeholder polygons — physical camera not yet installed. Set needs_calibration=true so pipeline marks these as not_monitored.",
+      "needs_calibration": true,
+      "slots": [
+        {
+          "slotId": "B1-A09",
+          "description": "Lower concourse bay 9 (placeholder)",
+          "polygon": [
+            [0.05, 0.65],
+            [0.28, 0.65],
+            [0.28, 0.92],
+            [0.05, 0.92]
+          ]
+        },
+        {
+          "slotId": "B1-A10",
+          "description": "Lower concourse bay 10 (placeholder)",
+          "polygon": [
+            [0.30, 0.65],
+            [0.53, 0.65],
+            [0.53, 0.92],
+            [0.30, 0.92]
+          ]
+        },
+        {
+          "slotId": "B1-A11",
+          "description": "Lower concourse bay 11 (placeholder)",
+          "polygon": [
+            [0.55, 0.65],
+            [0.78, 0.65],
+            [0.78, 0.92],
+            [0.55, 0.92]
+          ]
+        },
+        {
+          "slotId": "B1-A12",
+          "description": "Lower concourse bay 12 (placeholder)",
+          "polygon": [
+            [0.80, 0.65],
+            [0.95, 0.65],
+            [0.95, 0.92],
+            [0.80, 0.92]
+          ]
+        }
+      ]
+    },
+    {
+      "cameraId": "CAM-B2-01",
+      "floor": "B2",
+      "description": "Basement 2 Lower Concourse Camera (Covers Aisle 1, 2, 3)",
+      "slots": [
+        {
+          "slotId": "B2-A01",
+          "polygon": [
+            [0.05, 0.08],
+            [0.18, 0.08],
+            [0.18, 0.35],
+            [0.05, 0.35]
+          ]
+        },
+        {
+          "slotId": "B2-A02",
+          "polygon": [
+            [0.20, 0.08],
+            [0.33, 0.08],
+            [0.33, 0.35],
+            [0.20, 0.35]
+          ]
+        },
+        {
+          "slotId": "B2-A03",
+          "polygon": [
+            [0.35, 0.08],
+            [0.48, 0.08],
+            [0.48, 0.35],
+            [0.35, 0.35]
+          ]
+        },
+        {
+          "slotId": "B2-A04",
+          "polygon": [
+            [0.50, 0.08],
+            [0.63, 0.08],
+            [0.63, 0.35],
+            [0.50, 0.35]
+          ]
+        },
+        {
+          "slotId": "B2-A05",
+          "polygon": [
+            [0.65, 0.08],
+            [0.78, 0.08],
+            [0.78, 0.35],
+            [0.65, 0.35]
+          ]
+        },
+        {
+          "slotId": "B2-A06",
+          "polygon": [
+            [0.80, 0.08],
+            [0.93, 0.08],
+            [0.93, 0.35],
+            [0.80, 0.35]
+          ]
+        },
+        {
+          "slotId": "B2-A07",
+          "polygon": [
+            [0.05, 0.65],
+            [0.18, 0.65],
+            [0.18, 0.92],
+            [0.05, 0.92]
+          ]
+        },
+        {
+          "slotId": "B2-A08",
+          "polygon": [
+            [0.20, 0.65],
+            [0.33, 0.65],
+            [0.33, 0.92],
+            [0.20, 0.92]
+          ]
+        },
+        {
+          "slotId": "B2-A09",
+          "polygon": [
+            [0.35, 0.65],
+            [0.48, 0.65],
+            [0.48, 0.92],
+            [0.35, 0.92]
+          ]
+        },
+        {
+          "slotId": "B2-A10",
+          "polygon": [
+            [0.50, 0.65],
+            [0.63, 0.65],
+            [0.63, 0.92],
+            [0.50, 0.92]
+          ]
+        },
+        {
+          "slotId": "B2-A11",
+          "polygon": [
+            [0.65, 0.65],
+            [0.78, 0.65],
+            [0.78, 0.92],
+            [0.65, 0.92]
+          ]
+        },
+        {
+          "slotId": "B2-A12",
+          "polygon": [
+            [0.80, 0.65],
+            [0.93, 0.65],
+            [0.93, 0.92],
+            [0.80, 0.92]
+          ]
+        }
+      ]
+    }
+  ]
+}
