@@ -25,3 +25,11 @@ Thumbs.db
 # Computer Vision model weights
 *.pt
 *.onnx
+
+# Generated CV pipeline outputs
+cv-service/output/
+output/
+
+# Generated test videos and images
+*.mp4
+*.avi

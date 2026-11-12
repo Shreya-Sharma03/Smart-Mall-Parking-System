@@ -1,0 +1,9 @@
+# Core Computer Vision and Machine Learning
+opencv-python>=4.9.0
+ultralytics>=8.1.0
+numpy>=1.26.0
+
+# HTTP and Utilities (prepared for future API communication)
+requests>=2.31.0
+pydantic>=2.6.0
+python-dotenv>=1.0.0
