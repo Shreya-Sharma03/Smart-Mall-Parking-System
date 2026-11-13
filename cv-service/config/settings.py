@@ -36,3 +36,10 @@ SUPPORTED_IMAGE_EXTENSIONS: List[str] = [
 SUPPORTED_VIDEO_EXTENSIONS: List[str] = [
     ".mp4", ".avi", ".mov", ".mkv", ".wmv"
 ]
+
+# Backend Node.js API Integration Settings
+DEFAULT_BACKEND_URL: str = os.getenv(
+    "BACKEND_API_URL", "http://localhost:5000/api/slots/cv-update"
+)
+DEFAULT_HTTP_TIMEOUT: float = float(os.getenv("BACKEND_HTTP_TIMEOUT", "5.0"))
+DEFAULT_MAX_RETRIES: int = int(os.getenv("BACKEND_MAX_RETRIES", "3"))

@@ -33,6 +33,8 @@ from config.settings import (
     DEFAULT_IOU_THRESHOLD,
     SUPPORTED_IMAGE_EXTENSIONS,
     SUPPORTED_VIDEO_EXTENSIONS,
+    DEFAULT_BACKEND_URL,
+    DEFAULT_HTTP_TIMEOUT,
 )
 from detection.detector import VehicleDetector, DetectionResult, FrameDetections
 from detection.slot_mapper import (
@@ -50,6 +52,8 @@ from utils.roi_utils import (
     DEFAULT_CONFIG_PATH,
 )
 from utils.visualizer import draw_mapping_results
+from services.occupancy_adapter import OccupancyAdapter
+from services.api_client import BackendApiClient
 
 
 class CVPipeline:
@@ -74,6 +78,10 @@ class CVPipeline:
         stabilizer: Optional[OccupancyStabilizer] = None,
         stabilizer_config: Optional[StabilizerConfig] = None,
         override_statuses: Optional[Dict[str, str]] = None,
+        enable_http_sync: bool = False,
+        backend_url: Optional[str] = None,
+        http_timeout: float = DEFAULT_HTTP_TIMEOUT,
+        api_client: Optional[BackendApiClient] = None,
     ):
         """
         Initializes the unified pipeline components once (caching model and ROIs).
@@ -92,6 +100,10 @@ class CVPipeline:
         :param stabilizer: Optional pre-configured OccupancyStabilizer instance
         :param stabilizer_config: Custom StabilizerConfig thresholds
         :param override_statuses: Map of slot_id -> 'reserved'|'maintenance'
+        :param enable_http_sync: Whether to synchronize occupancy updates with Node.js backend
+        :param backend_url: Target Node.js backend API URL (default: http://localhost:5000/api/slots/cv-update)
+        :param http_timeout: HTTP request timeout in seconds
+        :param api_client: Optional pre-configured BackendApiClient instance
         """
         self.camera_id = camera_id
         self.config_path = config_path
@@ -123,7 +135,25 @@ class CVPipeline:
             override_statuses=override_statuses,
         )
 
-        # 4. Initialize Vehicle Detector once
+        # 4. Initialize Occupancy Adapter (Backend Integration Output Preparation)
+        self.occupancy_adapter = OccupancyAdapter(
+            camera_id=self.camera_id,
+            slots_config=self.slots_config,
+        )
+
+        # 5. Initialize Optional HTTP API Client (Default: Disabled for offline workflows)
+        self.enable_http_sync = enable_http_sync
+        if api_client is not None:
+            self.api_client = api_client
+        elif self.enable_http_sync:
+            self.api_client = BackendApiClient(
+                backend_url=backend_url or DEFAULT_BACKEND_URL,
+                timeout=http_timeout,
+            )
+        else:
+            self.api_client = None
+
+        # 6. Initialize Vehicle Detector once
         if detector is not None:
             self.detector = detector
         else:
@@ -325,7 +355,38 @@ class CVPipeline:
             "mapping_conflicts": mapping_conflicts,
         }
 
-        # 6. Visualization Stage
+        # Backend-Ready Normalized Occupancy Representation
+        normalized_snapshot = self.occupancy_adapter.get_normalized_snapshot(
+            stabilized_states=stabilized_states,
+            timestamp=timestamp,
+        )
+        occupancy_transitions = self.occupancy_adapter.detect_status_transitions(
+            stabilized_states=stabilized_states,
+            timestamp=timestamp,
+        )
+        backend_request_payload = self.occupancy_adapter.build_backend_payload(
+            stabilized_states=stabilized_states,
+            timestamp=timestamp,
+        )
+
+        frame_record["backend_payload"] = normalized_snapshot
+        frame_record["backend_request"] = backend_request_payload
+        frame_record["occupancy_transitions"] = occupancy_transitions
+
+        # 6. Optional HTTP Synchronization with Node.js Backend
+        http_sync_result = None
+        if self.enable_http_sync and self.api_client is not None:
+            dispatch = self.api_client.sync_occupancy(
+                adapter=self.occupancy_adapter,
+                stabilized_states=stabilized_states,
+                timestamp=timestamp,
+            )
+            if dispatch is not None:
+                http_sync_result = dispatch.to_dict()
+
+        frame_record["http_sync"] = http_sync_result
+
+        # 7. Visualization Stage
         annotated_frame = draw_mapping_results(
             frame=frame,
             mapping_result=mapping_result,
@@ -517,6 +578,12 @@ class CVPipeline:
             "stabilized_occupancy": {s_id: s.to_dict() for s_id, s in self.stabilizer.slots_state.items()},
             "tracked_vehicles": [t.to_dict() for t in self.tracker.tracks],
             "confirmation_summary": self.stabilizer.get_summary_counts(),
+            "backend_payload": self.occupancy_adapter.get_normalized_snapshot(
+                stabilized_states=self.stabilizer.slots_state,
+            ),
+            "occupancy_transitions": self.occupancy_adapter.detect_status_transitions(
+                stabilized_states=self.stabilizer.slots_state,
+            ),
             "annotated_video_path": vid_out_path,
         }
 

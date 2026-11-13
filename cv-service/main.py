@@ -319,6 +319,8 @@ def run_pipeline_command(
     config_path: str,
     output_dir: str,
     conf_threshold: float,
+    enable_http_sync: bool = False,
+    backend_url: str = None,
 ):
     """
     Runs the unified Phase 4 CVPipeline on an image, video file, or webcam.
@@ -333,6 +335,8 @@ def run_pipeline_command(
     :param config_path: Path to slots_config.json
     :param output_dir: Root directory for pipeline outputs
     :param conf_threshold: Detection confidence threshold
+    :param enable_http_sync: Whether to synchronize occupancy updates with Node.js backend
+    :param backend_url: Target Node.js backend API URL
     """
     from config.settings import SUPPORTED_IMAGE_EXTENSIONS, SUPPORTED_VIDEO_EXTENSIONS
 
@@ -344,6 +348,7 @@ def run_pipeline_command(
     print(f"  Config      : {config_path}")
     print(f"  Output Dir  : {output_dir}")
     print(f"  Confidence  : {conf_threshold}")
+    print(f"  HTTP Sync   : {'Enabled (' + str(backend_url or 'default') + ')' if enable_http_sync else 'Disabled (Offline)'}")
     print("==================================================\n")
 
     try:
@@ -353,6 +358,9 @@ def run_pipeline_command(
             camera_id=camera_id,
             output_dir=output_dir,
             allow_mock=True,
+            enable_http_sync=enable_http_sync,
+            backend_url=backend_url,
+        )
         )
     except ValueError as e:
         print(f"[Fatal] Pipeline initialisation failed: {e}")
@@ -431,6 +439,8 @@ def main():
     parser.add_argument("--model", type=str, default=DEFAULT_MODEL_PATH, help=f"Path to YOLOv8 weights (default: {DEFAULT_MODEL_PATH})")
     parser.add_argument("--output-dir", type=str, default="output", help="Directory for detection outputs (default: output)")
     parser.add_argument("--calibrate", type=str, help="Launch interactive calibration tool on an image (path to image)")
+    parser.add_argument("--sync-backend", action="store_true", help="Enable live HTTP synchronization to Node.js backend (default: disabled)")
+    parser.add_argument("--backend-url", type=str, default=None, help="Node.js backend API URL (default: http://localhost:5000/api/slots/cv-update)")
 
     args = parser.parse_args()
 
@@ -449,6 +459,8 @@ def main():
             config_path=args.config,
             output_dir=os.path.join(args.output_dir, "pipeline"),
             conf_threshold=args.conf,
+            enable_http_sync=args.sync_backend,
+            backend_url=args.backend_url,
         )
         return
 
