@@ -31,6 +31,12 @@ const parkingSlotSchema = new mongoose.Schema(
             default: false
         },
 
+        activeReservationId: {
+            type: String,
+            default: null,
+            trim: true
+        },
+
         nodeId: {
             type: String,
             required: true
