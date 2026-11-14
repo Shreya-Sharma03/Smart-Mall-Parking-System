@@ -16,12 +16,16 @@ import {
   X,
   Plus,
   Trash2,
-  Pencil
+  Pencil,
+  CalendarClock
 } from "lucide-react";
 
 import "./App.css";
+import ReservationsView from "./components/ReservationsView";
 
-const API_URL = "http://localhost:5000/api/slots";
+const API_BASE_URL = "http://localhost:5000/api";
+const API_URL = `${API_BASE_URL}/slots`;
+const RESERVATIONS_API_URL = `${API_BASE_URL}/reservations`;
 
 const EMPTY_SLOT = {
   slotId: "",
@@ -444,6 +448,12 @@ const handleEditSubmit = async (e) => {
       color: "orange"
     },
     {
+      title: "Reserved",
+      value: stats?.statusCounts?.reserved ?? 0,
+      icon: Clock,
+      color: "purple"
+    },
+    {
       title: "Maintenance",
       value: stats?.statusCounts?.maintenance ?? 0,
       icon: Wrench,
@@ -512,6 +522,17 @@ const handleEditSubmit = async (e) => {
           >
             <ParkingSquare size={19} />
             <span>Parking Slots</span>
+          </button>
+
+          <button
+            className={`nav-item ${activePage === "Reservations" ? "active" : ""}`}
+            onClick={() => {
+              setActivePage("Reservations");
+              setSidebarOpen(false);
+            }}
+          >
+            <CalendarClock size={19} />
+            <span>Reservations</span>
           </button>
         </div>
 
@@ -1250,6 +1271,14 @@ const handleEditSubmit = async (e) => {
                 Showing {filteredSlots.length} of {slots.length} parking slots
               </p>
             </>
+          )}
+
+          {/* Reservations */}
+          {activePage === "Reservations" && (
+            <ReservationsView
+              apiUrl={RESERVATIONS_API_URL}
+              onRefreshSlots={fetchDashboardData}
+            />
           )}
 
           <footer className="dashboard-footer">

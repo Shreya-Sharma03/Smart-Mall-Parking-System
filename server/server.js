@@ -4,6 +4,7 @@ const express = require("express");
 const cors = require("cors");
 const connectDB = require("./config/db");
 const slotRoutes = require("./routes/slotRoutes");
+const reservationRoutes = require("./routes/reservationRoutes");
 
 const app = express();
 
@@ -11,6 +12,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/api/slots", slotRoutes);
+app.use("/api/reservations", reservationRoutes);
 
 app.get("/", (req, res) => {
     res.send("Smart Mall Parking Backend is running!");
@@ -33,4 +35,8 @@ const startServer = async () => {
     });
 };
 
-startServer();
+if (require.main === module) {
+    startServer();
+}
+
+module.exports = app;
