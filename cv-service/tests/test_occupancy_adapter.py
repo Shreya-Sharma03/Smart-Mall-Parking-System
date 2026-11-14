@@ -41,8 +41,14 @@ def _make_slot_state(
     vehicle_class: str = None,
     confidence: float = 0.92,
     is_monitored: bool = True,
+    consecutive_occupied_frames: int = 0,
+    consecutive_available_frames: int = 0,
 ) -> SlotTemporalState:
-    """Helper to generate a mock SlotTemporalState."""
+    """Helper to generate a mock SlotTemporalState with valid stabilization thresholds."""
+    if confirmed_status == "occupied" and consecutive_occupied_frames == 0:
+        consecutive_occupied_frames = 3
+    if confirmed_status == "available" and consecutive_available_frames == 0:
+        consecutive_available_frames = 5
     return SlotTemporalState(
         slot_id=slot_id,
         floor=floor,
@@ -52,6 +58,8 @@ def _make_slot_state(
         vehicle_class=vehicle_class,
         confidence=confidence,
         is_monitored=is_monitored,
+        consecutive_occupied_frames=consecutive_occupied_frames,
+        consecutive_available_frames=consecutive_available_frames,
     )
 
 

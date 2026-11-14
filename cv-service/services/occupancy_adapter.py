@@ -59,18 +59,25 @@ def normalize_vehicle_type(vehicle_class: Optional[str]) -> Optional[str]:
     return VEHICLE_TYPE_NORMALIZATION.get(normalized_key, None)
 
 
-def get_iso_timestamp(timestamp: Optional[Union[float, str]] = None) -> str:
+def get_iso_timestamp(timestamp: Optional[Union[float, str, datetime]] = None) -> str:
     """
-    Generates an ISO-8601 UTC timestamp string.
+    Generates a valid ISO-8601 UTC timestamp string with timezone (ending in 'Z').
     If a float timestamp (seconds) is provided, uses it; otherwise uses current UTC time.
     """
     if isinstance(timestamp, str) and "T" in timestamp:
-        return timestamp
-    if isinstance(timestamp, (int, float)) and timestamp > 0:
+        clean_str = timestamp.strip()
+        if clean_str.endswith("+00:00"):
+            return clean_str[:-6] + "Z"
+        if not clean_str.endswith("Z") and "+" not in clean_str[10:] and "-" not in clean_str[10:]:
+            return clean_str + "Z"
+        return clean_str
+    if isinstance(timestamp, datetime):
+        dt = timestamp.astimezone(timezone.utc)
+    elif isinstance(timestamp, (int, float)) and timestamp > 0:
         dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
     else:
         dt = datetime.now(timezone.utc)
-    return dt.isoformat()
+    return dt.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
 
 class OccupancyAdapter:
@@ -263,12 +270,25 @@ class OccupancyAdapter:
         if confirmed_status not in OPERATIONAL_STATUSES:
             return None
 
+        consec_occ_int = int(consec_occupied)
+        consec_avail_int = int(consec_available)
+
+        # Issue 2 Gate:
+        # The backend requires:
+        # - Occupied: minimum 3 consecutive confirmed frames
+        # - Available: minimum 5 consecutive confirmed frames
+        # Initial available states with zero (or < 5) frames MUST NOT be transmitted!
+        if confirmed_status == "occupied" and consec_occ_int < 3:
+            return None
+        if confirmed_status == "available" and consec_avail_int < 5:
+            return None
+
         return {
             "slotId": slot_id,
             "confirmedStatus": confirmed_status,
             "isMonitored": bool(is_monitored),
-            "consecutiveOccupiedFrames": int(consec_occupied),
-            "consecutiveAvailableFrames": int(consec_available),
+            "consecutiveOccupiedFrames": consec_occ_int,
+            "consecutiveAvailableFrames": consec_avail_int,
         }
 
     def build_backend_payload(
@@ -404,19 +424,35 @@ class OccupancyAdapter:
             if state is None:
                 continue
 
-            # Extract confirmed status
+            # Extract confirmed status and frame counters
             if hasattr(state, "confirmed_status"):
                 confirmed_status = state.confirmed_status
                 vehicle_class = getattr(state, "vehicle_class", None)
+                consec_occupied = getattr(state, "consecutive_occupied_frames", 0)
+                consec_available = getattr(state, "consecutive_available_frames", 0)
             elif isinstance(state, dict):
                 confirmed_status = state.get("confirmedStatus") or state.get("confirmed_status")
                 vehicle_class = state.get("vehicleClass") or state.get("vehicle_class")
+                consec_occupied = state.get("consecutiveOccupiedFrames", state.get("consecutive_occupied_frames", 0))
+                consec_available = state.get("consecutiveAvailableFrames", state.get("consecutive_available_frames", 0))
             else:
                 continue
 
             # Guard: Transitions ONLY occur between definitive operational states
             # Uncertain or unmonitored states never trigger operational transitions
             if confirmed_status not in OPERATIONAL_STATUSES:
+                continue
+
+            consec_occ_int = int(consec_occupied)
+            consec_avail_int = int(consec_available)
+
+            # Issue 2 Gate:
+            # Transitions and initial confirmations are only eligible once the minimum
+            # consecutive confirmed frames threshold is met (Occupied >= 3, Available >= 5).
+            # Do NOT emit initial available states with 0 or < 5 frames.
+            if confirmed_status == "occupied" and consec_occ_int < 3:
+                continue
+            if confirmed_status == "available" and consec_avail_int < 5:
                 continue
 
             prev_status = self.last_emitted_status.get(s_id)
