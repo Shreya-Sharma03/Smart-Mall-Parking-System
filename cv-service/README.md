@@ -15,10 +15,16 @@ cv-service/
 ├── detection/
 │   ├── __init__.py
 │   ├── detector.py         # YOLOv8 vehicle detection engine with COCO filtering
+│   ├── occupancy_stabilizer.py # Temporal tracking & frame hysteresis (3-frame occupied, 5-frame available)
 │   ├── slot_mapper.py      # Vehicle-to-slot ROI mapping and occupancy candidate engine
+│   ├── tracker.py          # Multi-frame bounding box tracking
 │   └── video_processor.py  # Video stream processor and frame extractor
 ├── models/
 │   └── __init__.py         # YOLO model directory (weights ignored from git)
+├── services/
+│   ├── __init__.py
+│   ├── api_client.py       # Resilient HTTP client for POST /api/slots/cv-update with timestamp tracking
+│   └── occupancy_adapter.py # Normalizes stabilized occupancy to backend schema
 ├── tools/
 │   ├── __init__.py
 │   └── calibrate_roi.py    # Interactive OpenCV ROI calibration utility (GUI & programmatic)
@@ -28,12 +34,18 @@ cv-service/
 │   ├── visualizer.py       # High-visibility bounding box, ROI polygon, mapping lines & HUD
 │   └── synthetic_media.py  # Synthetic parking test image & video generator
 ├── tests/
-│   ├── test_detector.py    # Detection unit & integration test suite
-│   ├── test_roi.py         # ROI schema, coordinate conversion & validation test suite
-│   ├── test_slot_mapper.py # Vehicle-to-slot mapping & conflict disambiguation test suite
-│   └── test_pipeline.py    # Unified CVPipeline integration test suite (12 tests)
+│   ├── test_api_client.py        # Backend API client & contract regression test suite
+│   ├── test_detector.py          # Detection unit & integration test suite
+│   ├── test_live_integration.py  # Live integration test suite (requires startTestServer.js)
+│   ├── test_occupancy_adapter.py # Adapter schema transformation test suite
+│   ├── test_pipeline.py          # Unified CVPipeline integration test suite (12 tests)
+│   ├── test_roi.py               # ROI schema, coordinate conversion & validation test suite
+│   ├── test_slot_mapper.py       # Vehicle-to-slot mapping & conflict disambiguation test suite
+│   ├── test_stabilizer.py        # Temporal hysteresis & threshold test suite
+│   ├── test_tracker.py           # Multi-frame tracking test suite
+│   └── PHASE2_INTEGRATION_GUIDE.md # Live test startup guide
 ├── topology.py             # Root re-export of topology
-├── pipeline.py             # Phase 4: Unified CVPipeline class
+├── pipeline.py             # Unified CVPipeline class with HTTP sync
 ├── main.py                 # CLI entry point (--source, --image, --video, --demo, --calibrate)
 ├── requirements.txt        # Python dependencies
 └── README.md
@@ -41,29 +53,32 @@ cv-service/
 
 ## Technologies & Target Classes
 
-- **Python 3.10+** (tested on Python 3.12)
-- **Ultralytics YOLOv8**: Real-time object detection
+- **Python 3.12** (active environment in `cv-service/.venv`)
+- **Ultralytics YOLOv8 (8.4+)**: Real-time vehicle detection
   - **COCO Class 2:** `car` (Four-Wheeler)
   - **COCO Class 3:** `motorcycle` (Two-Wheeler)
-- **OpenCV (`opencv-python`)**: Video stream reading, frame decoding, and HUD overlays
-- **NumPy**: Bounding box geometry and vectorized tensor operations
+- **OpenCV (`opencv-python 5.0+`)**: Frame reading, polygon clipping, and visual overlays
+- **NumPy (2.5+)**: Vectorized geometry, point containment, and IoU computation
+- **PyTorch (2.15+ CPU)**: YOLO inference runtime
+- **Pytest (9.2+)**: Comprehensive automated test runner
 
 ---
 
 ## Installation & Setup
 
-### 1. Create and Activate Virtual Environment
+### 1. Virtual Environment
+
+The project provides an established Python 3.12 virtual environment at `cv-service/.venv`:
 
 ```bash
 # Windows (PowerShell)
 cd cv-service
-python -m venv venv
-.\venv\Scripts\Activate.ps1
+.\.venv\Scripts\Activate.ps1
 
-# macOS / Linux
+# macOS / Linux (if configuring local environment)
 cd cv-service
-python3 -m venv venv
-source venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate
 ```
 
 ### 2. Install Dependencies
@@ -378,27 +393,125 @@ outputs/
 | `test_11` | Annotated frame is `ndarray` with same spatial dimensions |
 | `test_12` | 5 consecutive frames with correct `frame_number` field |
 
-Tests require OpenCV + NumPy; they are **auto-skipped** in environments without those packages.
+---
 
-```bash
-# Run only Phase 4 pipeline tests
-python -m unittest cv-service/tests/test_pipeline.py -v
+## Phase 5: Temporal State Tracking & Occupancy Hysteresis
 
-# Run complete test suite (43 tests total)
-python -m unittest discover -s tests -p "test_*.py"
+To eliminate detection flicker, rapid state toggling, and false negatives from momentary occlusions, Phase 5 introduces the `SlotTemporalTracker` (`detection/occupancy_stabilizer.py`).
+
+### 1. Hysteresis State Machine
+- **Occupied Confirmation:** Requires **3 consecutive frames** with vehicle detected (`consecutive_occupied >= 3`).
+- **Available Confirmation:** Requires **5 consecutive frames** with no vehicle detected (`consecutive_available >= 5`).
+- **Initial State Suppression:** Slots initialized as `available` with zero frames are excluded from dispatch until at least 5 frames confirm the empty state, preventing unverified updates.
+
+### 2. Temporal State Machine Diagram
+```text
+                  +--------------------------------+
+                  |           AVAILABLE            |
+                  +--------------------------------+
+                                  |
+            Vehicle Detected      |  No Vehicle (5 frames)
+               (1 frame)          |
+                                  v
+                  +--------------------------------+
+                  |         TENTATIVE OCCUPIED     |
+                  +--------------------------------+
+                                  |
+            Vehicle Confirmed     |
+               (3 frames)         |
+                                  v
+                  +--------------------------------+
+                  |            OCCUPIED            |
+                  +--------------------------------+
 ```
 
-### Known Limitations (Phase 4)
+---
 
-- **Synthetic testing only** – All integration tests use NumPy-generated frames and
-  manually positioned bounding boxes. No real CCTV footage has been validated.
-- **No temporal tracking** – Per-frame only. Each frame is independent; there is no
-  multi-frame stabilisation or occupancy hysteresis.
-- **No backend integration** – JSON output is written to local `outputs/json/`.
-  MongoDB / Express API push is out of scope (Milestone 5).
-- **Mock detector** – Without real YOLOv8 weights (`yolov8n.pt`), the pipeline falls
-  back to `allow_mock=True` and produces zero detections unless `custom_detections`
-  are injected.
+## Phase 6: Backend REST API Integration
+
+The CV service dispatches stabilized parking updates to Person B's Express backend via `services/api_client.py` and `services/occupancy_adapter.py`.
+
+### 1. HTTP Endpoint Contract
+```http
+POST /api/slots/cv-update HTTP/1.1
+Host: localhost:5000
+Content-Type: application/json
+
+{
+  "cameraId": "CAM-B1-01",
+  "timestamp": "2026-11-18T10:00:00.000Z",
+  "updates": [
+    {
+      "slotId": "B1-A01",
+      "confirmedStatus": "occupied",
+      "isMonitored": true,
+      "consecutiveOccupiedFrames": 3,
+      "consecutiveAvailableFrames": 0
+    }
+  ]
+}
+```
+
+### 2. Reliability & Safety Rules
+- **Timestamp Monotonicity:** Per-camera strictly increasing ISO 8601 timestamps with timezone. Timestamps >5 minutes in the future are rejected. Duplicate timestamps advance automatically by +1ms on retry.
+- **Batch Size Limits:** Up to 24 slot updates per request (`MAX_BATCH_SIZE = 24`).
+- **Spatial Authorization:** Only calibrated, whitelisted cameras are accepted. `CAM-B1-01` covers `B1-A01` through `B1-A08`. Uncalibrated cameras (e.g. `CAM-B1-02`) receive `403 Forbidden`.
+- **Reservation & Maintenance Interlocking:** If a slot is marked `reserved` or `maintenance` in the database, the backend skips the slot with an explanation in the `skipped` response array. The CV client drops skipped slots from its pending queue to prevent endless retry storms.
+- **Retry Logic:** Exponential backoff with jitter on network failures and HTTP 500 errors.
+
+---
+
+## Automated Verification & Testing
+
+The CV test harness consists of **135 automated tests** run via Pytest or Python's `unittest` module using the dedicated virtual environment (`.venv`).
+
+### Running the Tests
+
+#### 1. Full Combined Suite (135 Tests)
+```bash
+cd cv-service
+.\.venv\Scripts\Activate.ps1
+python -m pytest -v
+```
+*(With the test server running, all 135 tests pass. Without the server, 99 offline tests pass and 36 live tests safely skip).*
+
+#### 2. Offline Unit & Pipeline Tests (99 Tests — No Server Required)
+```bash
+python -m pytest -v tests/test_detector.py tests/test_roi.py tests/test_slot_mapper.py tests/test_stabilizer.py tests/test_tracker.py tests/test_occupancy_adapter.py tests/test_api_client.py tests/test_pipeline.py
+```
+
+#### 3. Pipeline Integration Tests (12 Tests)
+```bash
+python -m pytest -v tests/test_pipeline.py
+```
+
+#### 4. Live Integration Tests (36 Tests — Requires Test Server)
+Requires the isolated backend server to be running on `http://localhost:5000`:
+1. Start test server:
+   ```bash
+   cd server
+   node startTestServer.js
+   ```
+2. In a separate terminal:
+   ```bash
+   cd cv-service
+   .\.venv\Scripts\Activate.ps1
+   python -m pytest -v tests/test_live_integration.py
+   ```
+*(See [`tests/PHASE2_INTEGRATION_GUIDE.md`](file:///c:/Users/Shubhi%20Singh/Smart-Mall-Parking-System_cv/cv-service/tests/PHASE2_INTEGRATION_GUIDE.md) for full setup instructions).*
+
+---
+
+## Known Limitations
+
+1. **Synthetic & Static Media Testing:**
+   All automated pipeline tests execute against synthetic video files and static frames. Integration with physical CCTV camera hardware requires live RTSP streaming endpoints and physical network routing.
+2. **Single Calibrated Camera (`CAM-B1-01`):**
+   Only `CAM-B1-01` is actively configured in `config/slots_config.json` and authorized in `server/config/cameraConfig.js` for bays `B1-A01` through `B1-A08`. Camera `CAM-B1-02` is uncalibrated and deliberately rejected with `403 Forbidden`.
+3. **Live Test Server Prerequisite:**
+   `tests/test_live_integration.py` requires an active Express backend running via `node startTestServer.js` connected to `smart_mall_parking_test`. If the server is offline, these tests safely skip.
+4. **Mock Detector Fallback:**
+   Without local YOLOv8 weights (`yolov8n.pt`), the pipeline falls back to `allow_mock=True` and produces zero detections unless synthetic frames or `custom_detections` are injected.
 
 ---
 

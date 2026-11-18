@@ -280,14 +280,15 @@ Smart-Mall-Parking-System/
 │   └── vite.config.js
 ├── cv-service/                          # Python Computer Vision Service
 │   ├── config/                          # Settings, topology export, and ROI slots config
-│   ├── detection/                       # YOLOv8 detector, tracker, and slot mapper
-│   ├── services/                        # API client and occupancy adapter
-│   ├── tests/                           # Unit and integration test suites
-│   ├── tools/                           # ROI calibration utilities
-│   ├── main.py                          # CLI runner (--demo, --image, --video)
-│   ├── pipeline.py                      # Unified CV processing pipeline
-│   ├── requirements.txt
-│   └── README.md
+│   ├── detection/                       # YOLOv8 detector, tracker, slot mapper & temporal stabilizer
+│   ├── services/                        # Backend REST API client & occupancy adapter
+│   ├── tests/                           # 135 unit, pipeline, and live integration tests
+│   ├── tools/                           # Interactive ROI calibration utility
+│   ├── utils/                           # Visualizer, ROI utilities, and synthetic media generator
+│   ├── main.py                          # CLI runner (--demo, --image, --video, --calibrate)
+│   ├── pipeline.py                      # Unified CV processing pipeline with HTTP sync
+│   ├── requirements.txt                 # Python dependencies
+│   └── README.md                        # CV service architecture and testing guide
 ├── server/                              # Node.js + Express Backend
 │   ├── algorithms/
 │   │   └── dijkstra.js                  # Shortest-path recommendation engine
@@ -316,10 +317,21 @@ Smart-Mall-Parking-System/
 │   ├── package.json
 │   ├── server.js                        # Modular Express application
 │   └── startTestServer.js               # Dedicated isolated test server runner
-├── visitor-client/                      # React Visitor Application
-│   ├── src/                             # Visitor booking UI and floor maps
+├── visitor-client/                      # React 19 + Vite Visitor Application
+│   ├── dist/                            # Production build output
+│   ├── src/
+│   │   ├── algorithms/                  # Client-side Dijkstra pathfinding fallback
+│   │   ├── components/                  # Floor map, slot card, reservation modal, route overlay
+│   │   ├── data/                        # Shared topology, parking graph, and mock slots
+│   │   ├── hooks/                       # useParking live polling & connectivity hook
+│   │   ├── pages/                       # VisitorDashboard and HomePage
+│   │   ├── services/                    # slotService, recommendationService, reservationService
+│   │   └── styles/                      # Responsive CSS stylesheets
+│   ├── tests/
+│   │   └── e2e_integration.test.mjs     # 58-test end-to-end integration test suite
 │   ├── package.json
-│   └── vite.config.js
+│   ├── vite.config.js
+│   └── README.md                        # Visitor client documentation
 ├── .gitignore
 └── README.md                            # Comprehensive project documentation
 ```
@@ -395,7 +407,7 @@ To run the server bound strictly to the test database (`smart_mall_parking_test`
 
 ---
 
-### Step 4: Start the Visitor Client (Optional)
+### Step 4: Start the Visitor Client
 
 1. From the project root, open a separate terminal:
    ```bash
@@ -404,24 +416,20 @@ To run the server bound strictly to the test database (`smart_mall_parking_test`
    npm run dev
    ```
 
+2. Open the local Vite URL displayed in your terminal (typically `http://localhost:5173`).
+3. **Backend Connectivity:** The client connects to `http://localhost:5000/api` (configurable via `VITE_API_URL` in `.env`). If the backend is offline, the client automatically operates in **Offline Demo Mode** using local mock data and client-side Dijkstra shortest path.
+
 ---
 
-### Step 5: Run the Python Computer Vision Service (Optional)
+### Step 5: Run the Python Computer Vision Service
 
 1. From the project root, open a separate terminal:
    ```bash
    cd cv-service
-   python -m venv venv
-   ```
-   - Windows: `.\venv\Scripts\Activate.ps1`
-   - Linux/macOS: `source venv/bin/activate`
-
-2. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
+   .\.venv\Scripts\Activate.ps1
    ```
 
-3. Run the synthetic vehicle detection demonstration:
+2. Run the synthetic vehicle detection demonstration:
    ```bash
    python main.py --demo
    ```
@@ -430,29 +438,65 @@ To run the server bound strictly to the test database (`smart_mall_parking_test`
 
 ## 11. Automated Verification & Testing
 
-### Backend Automated Test Suites
+### A. Backend Automated Test Suites (Person B)
 The backend test harness uses the Node.js built-in test runner against the isolated `smart_mall_parking_test` database:
-
 ```bash
 cd server
 node --test --test-concurrency=1 tests/reservation.test.js tests/cvUpdate.test.js
 ```
-
-#### Verified Test Results:
 - **Total Tests:** **43 passed** (0 failed, 0 skipped).
-- **Execution Time:** ~37.4s.
 - **Coverage:** Complete reservation lifecycle, concurrency race conditions, slot ownership validation, camera authorization, frame hysteresis thresholds, timestamp ordering, and CV reservation interlocking.
 
-### Admin Dashboard Production Build
+### B. Computer Vision Automated Test Suites (Person A)
+The CV test suite runs via Pytest inside the dedicated virtual environment (`cv-service/.venv`):
 ```bash
-cd admin-dashboard
-npm.cmd run build
+cd cv-service
+.\.venv\Scripts\Activate.ps1
+python -m pytest -v
 ```
-- **Result:** **0 errors.** 2062 modules transformed, producing optimized production chunks in `dist/`.
+- **Total Tests:** **135 tests total**.
+- **Offline Tests (99 passed):** Unit, detector, ROI, slot mapper, tracker, temporal stabilizer, API client, adapter, and pipeline tests execute fully offline without requiring a running backend.
+- **Live Integration Tests (36 passed):** When `server/startTestServer.js` is running on `http://localhost:5000` connected to `smart_mall_parking_test`, all 36 live tests pass against the live Express endpoints. *(Note: If the backend is offline, these 36 tests safely skip via `@live_test`)*.
+
+### C. Visitor Client End-to-End Integration Suite (Person A)
+The visitor client integration test suite runs via Node.js ES modules:
+```bash
+cd visitor-client
+node tests/e2e_integration.test.mjs
+```
+- **Total Tests:** **58 passed** (0 failed, 0 skipped).
+- **Coverage:** 6 scenarios covering CV-to-backend integration (A), parking availability & filtering (B), recommendation system & Dijkstra fallback (C), reservation lifecycle (D), reservation & CV interlocking safety (E), and error handling & concurrency (F).
+
+### D. Production Build Verification
+- **Admin Dashboard:**
+  ```bash
+  cd admin-dashboard
+  npm run build
+  ```
+  **Result:** **0 errors.** Production bundle generated in `admin-dashboard/dist/`.
+- **Visitor Client:**
+  ```bash
+  cd visitor-client
+  npm run build
+  ```
+  **Result:** **0 errors.** Production bundle generated in `visitor-client/dist/`.
 
 ---
 
 ## 12. Current Project Status & Limitations
+
+### Completed & Verified (Person A):
+- [x] Computer vision to backend HTTP contract compatibility (`POST /api/slots/cv-update`).
+- [x] Temporal state stabilizer with frame hysteresis (3-frame occupied, 5-frame available).
+- [x] Initial state suppression and reserved/maintenance bay protection.
+- [x] Camera authorization and monotonic timestamp tracking per camera.
+- [x] 135 CV automated tests (99 offline passed, 36 live passed).
+- [x] Visitor client live slot fetching, connection health indicators, and automatic polling.
+- [x] Backend-first shortest path recommendation with Dijkstra fallback and route enrichment.
+- [x] Visitor reservation lifecycle (Booking modal, active countdown banner, cancellation, slot release).
+- [x] Privacy safeguards: zero PII persisted in browser storage (`reservationId` only).
+- [x] 58/58 visitor client end-to-end integration tests.
+- [x] Visitor client production build (0 errors).
 
 ### Completed & Verified (Person B):
 - [x] Express backend architecture, schemas, and REST APIs.
@@ -465,10 +509,12 @@ npm.cmd run build
 - [x] Dedicated isolated test server entry point (`server/startTestServer.js`).
 
 ### Genuine Limitations & Future Work:
-1. **Visitor Client Booking UI Integration:** Person A is integrating the visitor client booking drawer with the completed `POST /api/reservations` endpoint.
-2. **Live RTSP Stream Processing:** The Python CV service operates on video files and synthetic media; connecting to physical hardware CCTV RTSP streams represents a physical deployment step.
-3. **MongoDB Replica Set Requirement:** Multi-document transactions require MongoDB Atlas or a local replica set; standalone single-node MongoDB without replica set enabled cannot run transactional reservations.
-4. **Scheduled Expiry Worker:** Reservation expiry sweeps currently run automatically on API request triggers; a standing cron job or agenda worker could be added for independent timer sweeps during low-traffic periods.
+1. **Synthetic & Static Media Testing:** All CV automated tests execute against synthetic video files and static frames. Connecting to physical mall CCTV cameras over RTSP represents a physical deployment step.
+2. **Single Calibrated Camera (`CAM-B1-01`):** Only `CAM-B1-01` is actively configured and authorized for bays `B1-A01` through `B1-A08`. Camera `CAM-B1-02` is uncalibrated and deliberately rejected with `403 Forbidden` by backend safety policy.
+3. **Accessibility Availability with Test Data:** When no parking spaces marked `accessible: true` are available in the test database, recommendation queries return 0 results. The frontend displays a friendly empty state (*"No accessible parking spaces currently available"*).
+4. **Single Active Reservation per Browser Session:** The visitor dashboard UI is designed for single-visitor booking workflows; creating a subsequent reservation requires cancelling or completing the active reservation.
+5. **MongoDB Replica Set Requirement:** Multi-document transactions require MongoDB Atlas or a local replica set; standalone single-node MongoDB without replica sets cannot execute transactional reservations.
+6. **Scheduled Expiry Worker:** Reservation expiry sweeps currently run automatically on API request triggers; a standing cron job or agenda worker could be added for independent timer sweeps during low-traffic periods.
 
 ---
 

@@ -1,17 +1,29 @@
 import React from 'react';
-import { X, Car, Bike, Accessibility, MapPin, GitCommit, CheckCircle2, AlertTriangle, ShieldCheck, Wrench } from 'lucide-react';
+import {
+  X,
+  Car,
+  Bike,
+  Accessibility,
+  MapPin,
+  GitCommit,
+  CheckCircle2,
+  AlertTriangle,
+  ShieldCheck,
+  Wrench,
+  Lock,
+} from 'lucide-react';
 
-export default function SlotDetailsDrawer({ slot, onClose }) {
+export default function SlotDetailsDrawer({ slot, onClose, onOpenReservation }) {
   if (!slot) return null;
 
-  const { slotId, floor, status, vehicleType, accessible, aisle, connectToJunction } = slot;
+  const { slotId, floor, status, vehicleType, accessible, connectToJunction } = slot;
 
   const getStatusAdvice = () => {
     switch (status) {
       case 'available':
         return {
-          title: 'Ready for Parking',
-          desc: 'This space is currently vacant and ready for immediate parking.',
+          title: 'Ready for Parking & Reservation',
+          desc: 'This space is currently vacant. You can navigate directly or reserve it for 30 minutes.',
           icon: <CheckCircle2 size={18} className="advice-icon success" />,
           boxClass: 'advice-box-available',
         };
@@ -25,8 +37,8 @@ export default function SlotDetailsDrawer({ slot, onClose }) {
       case 'reserved':
         return {
           title: 'Reserved Space',
-          desc: 'This bay is reserved for pre-booked visitors or mall staff.',
-          icon: <ShieldCheck size={18} className="advice-icon info" />,
+          desc: 'This bay is currently held under an active reservation.',
+          icon: <Lock size={18} className="advice-icon info" />,
           boxClass: 'advice-box-reserved',
         };
       case 'maintenance':
@@ -42,6 +54,7 @@ export default function SlotDetailsDrawer({ slot, onClose }) {
   };
 
   const advice = getStatusAdvice();
+  const isAvailable = status === 'available';
 
   return (
     <div className="slot-details-card">
@@ -103,6 +116,20 @@ export default function SlotDetailsDrawer({ slot, onClose }) {
             <strong>{advice.title}: </strong>
             <span>{advice.desc}</span>
           </div>
+        </div>
+      )}
+
+      {/* Reservation Action Button */}
+      {isAvailable && onOpenReservation && (
+        <div className="details-reserve-action">
+          <button
+            type="button"
+            className="btn-reserve-bay-cta"
+            onClick={() => onOpenReservation(slot)}
+          >
+            <ShieldCheck size={16} />
+            <span>Reserve Bay {slotId} (30 Min Hold)</span>
+          </button>
         </div>
       )}
     </div>

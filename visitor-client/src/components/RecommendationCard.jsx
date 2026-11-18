@@ -14,6 +14,7 @@ import {
   EyeOff,
   ChevronDown,
   ChevronUp,
+  ShieldCheck,
 } from 'lucide-react';
 
 export default function RecommendationCard({
@@ -22,6 +23,7 @@ export default function RecommendationCard({
   onToggleRoute,
   onSelectAlternative,
   activeRouteSlotId,
+  onOpenReservation,
 }) {
   const [showAlternatives, setShowAlternatives] = useState(false);
 
@@ -56,6 +58,7 @@ export default function RecommendationCard({
   const { slot, distance, estimatedTime, estimatedTimeDesc, requiresFloorChange } = best;
 
   const isCurrentActive = isRouteActive && activeRouteSlotId === slot.slotId;
+  const isAvailable = slot.status === 'available';
 
   return (
     <div className={`recommendation-card ${isCurrentActive ? 'route-active' : ''}`}>
@@ -127,8 +130,8 @@ export default function RecommendationCard({
           )}
         </div>
 
-        {/* Action Button: Visualize Route */}
-        <div className="rec-actions">
+        {/* Action Buttons: Visualize Route & Reserve Slot */}
+        <div className="rec-actions-cluster">
           <button
             type="button"
             className={`btn-visualize-route ${isCurrentActive ? 'btn-active' : ''}`}
@@ -146,6 +149,18 @@ export default function RecommendationCard({
               </>
             )}
           </button>
+
+          {onOpenReservation && isAvailable && (
+            <button
+              type="button"
+              className="btn-rec-reserve-cta"
+              onClick={() => onOpenReservation(slot)}
+              title={`Reserve optimal bay ${slot.slotId} for 30 minutes`}
+            >
+              <ShieldCheck size={16} />
+              <span>Reserve Bay</span>
+            </button>
+          )}
         </div>
 
         {/* Alternative options section */}

@@ -24,6 +24,11 @@ import unittest
 from datetime import datetime, timezone
 from unittest import mock
 
+try:
+    import numpy as np
+except ImportError:
+    np = None
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
@@ -418,8 +423,11 @@ class TestBackendApiClientPhase1(unittest.TestCase):
         self.assertFalse(pipeline.enable_http_sync)
         self.assertIsNone(pipeline.api_client)
 
-        dummy_frame = mock.MagicMock()
-        dummy_frame.shape = (720, 1280, 3)
+        if np is not None:
+            dummy_frame = np.zeros((720, 1280, 3), dtype=np.uint8)
+        else:
+            dummy_frame = mock.MagicMock()
+            dummy_frame.shape = (720, 1280, 3)
         record, _ = pipeline.process_frame(dummy_frame, frame_number=1, custom_detections=[])
         self.assertIsNone(record.get("http_sync"))
         self.assertIn("backend_payload", record)
