@@ -1,3 +1,4 @@
+import ReservationsView from "./components/ReservationsView";
 import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
@@ -5,6 +6,7 @@ import {
   ParkingSquare,
   CalendarClock,
   RefreshCw,
+  LogOut,
   Search,
   CheckCircle2,
   Car,
@@ -18,13 +20,14 @@ import {
   Check
 } from "lucide-react";
 
+import Login from "./Login.jsx";
+import Welcome from "./Welcome.jsx";
+import { useAuth } from './auth';
 import "./App.css";
-import ReservationsView from "./components/ReservationsView";
 
 const API_BASE_URL = "http://localhost:5000/api";
 const API_URL = `${API_BASE_URL}/slots`;
 const RESERVATIONS_API_URL = `${API_BASE_URL}/reservations`;
-
 const EMPTY_SLOT = {
   slotId: "",
   floor: "B1",
@@ -59,6 +62,7 @@ const sortParkingSlots = (slotList) => {
 };
 
 function App() {
+  const [showAdminLogin, setShowAdminLogin] = useState(false);
   const [stats, setStats] = useState(null);
   const [slots, setSlots] = useState([]);
 
@@ -80,6 +84,7 @@ function App() {
   const [deletingSlotId, setDeletingSlotId] = useState(null);
   const [actionMessage, setActionMessage] = useState("");
   const [actionMessageType, setActionMessageType] = useState("");
+  const { isAuthenticated, csrfToken, logout } = useAuth();
 
   // Add-slot form state
   const [showAddForm, setShowAddForm] = useState(false);
@@ -477,6 +482,15 @@ function App() {
       : "Updating...";
   };
 
+  if (!isAuthenticated) {
+    if (showAdminLogin) {
+      return (
+        <Login onBack={() => setShowAdminLogin(false)} />
+      );
+    }
+
+    return <Welcome onAdminLogin={() => setShowAdminLogin(true)} />;
+  }
   return (
     <div className="dashboard-app">
       {/* Top Professional Navigation Header */}
@@ -516,6 +530,16 @@ function App() {
               <span className="user-role">Manager</span>
             </div>
           </div>
+
+          <button
+            type="button"
+            className="refresh-btn"
+            onClick={logout}
+            title="Logout from admin dashboard"
+          >
+            <LogOut size={14} />
+            <span>Logout</span>
+          </button>
         </div>
 
         {/* Four Original Main Navigation Tabs */}

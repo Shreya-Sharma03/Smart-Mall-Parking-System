@@ -1,5 +1,7 @@
 const express = require("express");
 const router = express.Router();
+const adminAuth = require('../middleware/adminAuth');
+const verifyCsrf = require('../middleware/verifyCsrf');
 const dijkstra = require("../algorithms/dijkstra");
 const { graph } = require("../data/parkingGraph");
 const ParkingSlot = require("../models/ParkingSlot");
@@ -133,7 +135,7 @@ const TOTAL_CAPACITY = 24;
 const FLOOR_CAPACITY = 12;
 
 // 1. Add a new parking slot
-router.post("/", async (req, res) => {
+router.post("/", adminAuth, verifyCsrf, async (req, res) => {
     try {
         const {
             slotId,
@@ -811,7 +813,7 @@ router.get("/:slotId", async (req, res) => {
 
 // 4. Update a parking slot
 
-router.patch("/:slotId", async (req, res) => {
+router.patch("/:slotId", adminAuth, verifyCsrf, async (req, res) => {
     try {
         const allowedFields = [
             "floor",
@@ -919,7 +921,7 @@ router.patch("/:slotId", async (req, res) => {
     }
 });
 
-router.delete("/:slotId", async (req, res) => {
+router.delete("/:slotId", adminAuth, verifyCsrf, async (req, res) => {
     try {
         const slot = await ParkingSlot.findOne({
             slotId: req.params.slotId

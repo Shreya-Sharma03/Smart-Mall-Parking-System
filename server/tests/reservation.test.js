@@ -1,6 +1,6 @@
 /**
  * Reservation System Integration Test Suite
- * 
+ *
  * Verifies all reservation lifecycle operations against smart_mall_parking_test database:
  * - Reservation creation and validation
  * - Concurrency and double-booking protection
@@ -8,11 +8,14 @@
  * - Reservation cancellation and slot release
  * - Automatic 30-minute expiry and slot release
  * - Computer vision interlocking and compatibility
- * 
+ *
  * Uses Node.js built-in node:test runner, node:assert/strict, native fetch,
  * and an ephemeral HTTP port via app.listen(0).
  */
+process.env.NODE_ENV = "test";
 
+const dns = require("dns");
+dns.setServers(["172.31.1.6"]);
 const { describe, it, before, after, beforeEach } = require("node:test");
 const assert = require("node:assert/strict");
 
@@ -32,6 +35,8 @@ const { getFreshTestSlots } = require("./fixtures/testSlots");
 describe("Reservation System Integration Tests", () => {
     let server;
     let baseUrl;
+let adminCookie = '';
+let adminCsrfToken = '';
 
     // Millisecond offset counter for monotonic CV timestamps
     let timeOffsetMs = 0;
@@ -50,12 +55,35 @@ describe("Reservation System Integration Tests", () => {
             headers: {}
         };
 
+        if (adminCookie) {
+            options.headers["Cookie"] = adminCookie;
+        }
+
+        if (adminCsrfToken) {
+            options.headers["X-CSRF-Token"] = adminCsrfToken;
+        }
+
         if (body !== null) {
             options.headers["Content-Type"] = "application/json";
             options.body = JSON.stringify(body);
         }
 
         const response = await fetch(`${baseUrl}${endpoint}`, options);
+
+        if (endpoint === "/api/admin/login") {
+            const cookies = response.headers.getSetCookie
+                ? response.headers.getSetCookie()
+                : [response.headers.get("set-cookie") || ""];
+
+            const sessionCookie = cookies.find(cookie =>
+                cookie.startsWith("connect.sid=")
+            );
+
+            if (sessionCookie) {
+                adminCookie = sessionCookie.split(";")[0];
+            }
+        }
+
         let data;
         try {
             data = await response.json();
@@ -69,6 +97,7 @@ describe("Reservation System Integration Tests", () => {
         };
     }
 
+
     before(async () => {
         // Enforce strict test database connection
         await connectTestDb();
@@ -81,12 +110,28 @@ describe("Reservation System Integration Tests", () => {
                 resolve();
             });
         });
+
+        // Authenticate admin for protected reservation GET tests
+        const login = await apiRequest("POST", "/api/admin/login", {
+            email: process.env.ADMIN_EMAIL,
+            password: process.env.ADMIN_TEST_PASSWORD
+        });
+
+        assert.equal(login.status, 200, "Admin test login should succeed");
+        adminCsrfToken = login.body.csrfToken;
+        assert.ok(adminCookie, "Admin session cookie should be set");
+        assert.ok(adminCsrfToken, "Admin CSRF token should be returned");
     });
 
     after(async () => {
         if (server) {
             await new Promise((resolve) => server.close(resolve));
         }
+
+        if (app.sessionStore) {
+            await app.sessionStore.close();
+        }
+
         await disconnectTestDb();
     });
 

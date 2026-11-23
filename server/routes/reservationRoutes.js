@@ -1,4 +1,7 @@
-const express = require("express");
+const express = require('express');
+const adminAuth = require('../middleware/adminAuth');
+
+
 const router = express.Router();
 const mongoose = require("mongoose");
 const Reservation = require("../models/Reservation");
@@ -206,7 +209,7 @@ router.post("/", async (req, res) => {
  * 2. List reservations with optional filters
  * GET /api/reservations
  */
-router.get("/", async (req, res) => {
+router.get("/", adminAuth, async (req, res) => {
     try {
         await releaseExpiredReservations();
 
@@ -245,7 +248,7 @@ router.get("/", async (req, res) => {
  * 3. Get reservation details
  * GET /api/reservations/:reservationId
  */
-router.get("/:reservationId", async (req, res) => {
+router.get("/:reservationId", adminAuth, async (req, res) => {
     try {
         await releaseExpiredReservations();
 

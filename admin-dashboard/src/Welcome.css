@@ -1,0 +1,407 @@
+
+.welcome-page {
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+  color: #f4f8fb;
+  background:
+    linear-gradient(110deg, rgba(5, 17, 29, .97), rgba(7, 27, 39, .83)),
+    url("https://images.unsplash.com/photo-1590674899484-d5640e854abe?auto=format&fit=crop&w=2000&q=85")
+    center / cover no-repeat;
+  font-family: Inter, "Segoe UI", sans-serif;
+}
+
+.welcome-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 80% 45%, rgba(20, 184, 166, .16), transparent 35%),
+    linear-gradient(0deg, rgba(4, 15, 25, .65), transparent 45%);
+}
+
+.welcome-nav {
+  position: relative;
+  z-index: 1;
+  height: 90px;
+  padding: 0 7%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255,255,255,.09);
+}
+
+.welcome-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.welcome-logo {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  background: #0d9488;
+  color: white;
+  font-weight: 900;
+  font-size: 17px;
+  box-shadow: 0 5px 25px rgba(13,148,136,.3);
+}
+
+.welcome-brand h2 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: .3px;
+}
+
+.welcome-brand span {
+  color: #91a7b6;
+  font-size: 9px;
+  letter-spacing: 2px;
+}
+
+.welcome-nav-tag {
+  color: #b8c8d1;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  background: #2dd4bf;
+  border-radius: 50%;
+  box-shadow: 0 0 12px #2dd4bf;
+}
+
+.welcome-content {
+  position: relative;
+  z-index: 1;
+  width: min(760px, 88%);
+  margin: 0 auto;
+  padding: 105px 0 35px;
+}
+
+.welcome-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #5eead4;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+}
+
+.welcome-content > h1 {
+  margin: 23px 0 14px;
+  font-size: clamp(43px, 6vw, 68px);
+  line-height: 1.08;
+  letter-spacing: -2.5px;
+  font-weight: 750;
+}
+
+.welcome-content > h1 span {
+  color: #5eead4;
+}
+
+.welcome-description {
+  max-width: 550px;
+  color: #b5c5cf;
+  font-size: 15px;
+  line-height: 1.8;
+  margin-bottom: 43px;
+}
+
+.welcome-choice-title {
+  color: #e5edf2;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 17px;
+}
+
+.role-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 17px;
+}
+
+.role-card {
+  position: relative;
+  min-height: 185px;
+  padding: 23px;
+  text-align: left;
+  color: white;
+  border: 1px solid rgba(255,255,255,.13);
+  border-radius: 17px;
+  background: rgba(13, 35, 48, .79);
+  backdrop-filter: blur(12px);
+  cursor: pointer;
+  transition: transform .25s ease, border-color .25s ease, background .25s ease;
+}
+
+.role-card:hover {
+  transform: translateY(-6px);
+  border-color: #2dd4bf;
+  background: rgba(16, 53, 62, .94);
+}
+
+.role-icon {
+  width: 49px;
+  height: 49px;
+  display: grid;
+  place-items: center;
+  color: #5eead4;
+  background: rgba(45,212,191,.12);
+  border-radius: 13px;
+  margin-bottom: 19px;
+}
+
+.role-label {
+  color: #5eead4;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1.7px;
+}
+
+.role-card h2 {
+  font-size: 19px;
+  margin: 7px 0;
+}
+
+.role-card p {
+  color: #a9bbc5;
+  font-size: 12px;
+  line-height: 1.6;
+  max-width: 240px;
+  margin: 0;
+}
+
+.role-arrow {
+  position: absolute;
+  right: 20px;
+  bottom: 23px;
+  color: #5eead4;
+  transition: transform .2s ease;
+}
+
+.role-card:hover .role-arrow {
+  transform: translateX(5px);
+}
+
+.welcome-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 65px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255,255,255,.12);
+  color: #8197a5;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+}
+
+@media (max-width: 650px) {
+  .welcome-nav {
+    padding: 0 6%;
+  }
+
+  .welcome-nav-tag {
+    display: none;
+  }
+
+  .welcome-content {
+    padding-top: 75px;
+  }
+
+  .role-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .welcome-footer {
+    margin-top: 40px;
+    gap: 15px;
+    flex-wrap: wrap;
+  }
+}
+
+.login-content {
+  position: relative;
+  z-index: 1;
+  min-height: calc(100vh - 90px);
+  display: grid;
+  place-items: center;
+  padding: 35px 20px;
+}
+
+.login-card {
+  width: min(440px, 100%);
+  padding: 38px;
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 20px;
+  background: rgba(9, 29, 42, .88);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 25px 80px rgba(0,0,0,.35);
+}
+
+.login-icon {
+  width: 55px;
+  height: 55px;
+  display: grid;
+  place-items: center;
+  color: #5eead4;
+  background: rgba(45,212,191,.13);
+  border-radius: 15px;
+  margin-bottom: 22px;
+}
+
+.login-card h1 {
+  font-size: 32px;
+  margin: 10px 0;
+}
+
+.login-subtitle {
+  color: #a9bbc5;
+  font-size: 13px;
+  line-height: 1.7;
+  margin-bottom: 28px;
+}
+
+.login-card form label {
+  display: block;
+  color: #d5e1e8;
+  font-size: 12px;
+  margin: 18px 0 8px;
+}
+
+.login-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 0 14px;
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 10px;
+  color: #5eead4;
+  background: rgba(255,255,255,.05);
+}
+
+.login-input-wrap:focus-within {
+  border-color: #2dd4bf;
+}
+
+.login-input-wrap input {
+  width: 100%;
+  height: 48px;
+  border: 0;
+  outline: 0;
+  color: white;
+  background: transparent;
+  font-size: 13px;
+}
+
+.login-input-wrap input::placeholder {
+  color: #8297a5;
+}
+
+.login-submit {
+  width: 100%;
+  height: 49px;
+  margin-top: 27px;
+  border: 0;
+  border-radius: 10px;
+  background: #0d9488;
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  transition: background .2s ease;
+}
+
+.login-submit:hover {
+  background: #0f766e;
+}
+
+.login-submit:disabled {
+  opacity: .65;
+  cursor: not-allowed;
+}
+
+.login-error {
+  padding: 11px;
+  margin-bottom: 15px;
+  color: #fecaca;
+  background: rgba(220,38,38,.14);
+  border: 1px solid rgba(248,113,113,.3);
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.login-security {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 7px;
+  margin-top: 25px;
+  color: #8297a5;
+  font-size: 11px;
+}
+
+.login-back {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  color: #d5e1e8;
+  background: rgba(255,255,255,.07);
+  border: 1px solid rgba(255,255,255,.13);
+  border-radius: 9px;
+  cursor: pointer;
+}
+/* Dark theme for administrator login fields */
+.login-input-wrap {
+  background: rgba(15, 23, 42, 0.82);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.login-input-wrap input {
+  background: transparent !important;
+  color: #f1f5f9 !important;
+  caret-color: #2dd4bf;
+}
+
+.login-input-wrap input::placeholder {
+  color: #94a3b8 !important;
+  opacity: 1;
+}
+
+/* Prevent Chrome saved-password autofill from turning fields white */
+.login-input-wrap input:-webkit-autofill,
+.login-input-wrap input:-webkit-autofill:hover,
+.login-input-wrap input:-webkit-autofill:focus,
+.login-input-wrap input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #101c2b inset !important;
+  -webkit-text-fill-color: #f1f5f9 !important;
+  caret-color: #2dd4bf;
+  transition: background-color 9999s ease-out 0s;
+}
+/* Clickable ParkIQ logo on Admin Login */
+.clickable-brand {
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.clickable-brand:hover {
+  opacity: 0.85;
+}
+
+.clickable-brand:focus-visible {
+  outline: 2px solid #2dd4bf;
+  outline-offset: 5px;
+  border-radius: 6px;
+}

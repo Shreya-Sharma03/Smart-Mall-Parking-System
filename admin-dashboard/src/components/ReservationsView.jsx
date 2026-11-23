@@ -26,7 +26,9 @@ export default function ReservationsView({ apiUrl, onRefreshSlots }) {
     if (isManualRefresh) setRefreshing(true);
     setError("");
     try {
-      const response = await fetch(apiUrl);
+      const response = await fetch(apiUrl, {
+        credentials: "include"
+      });
       if (!response.ok) {
         throw new Error(`Failed to load reservations (HTTP ${response.status})`);
       }
@@ -100,7 +102,10 @@ export default function ReservationsView({ apiUrl, onRefreshSlots }) {
   const handleViewDetails = async (reservation) => {
     try {
       const response = await fetch(
-        `${apiUrl}/${encodeURIComponent(reservation.reservationId)}`
+        `${apiUrl}/${encodeURIComponent(reservation.reservationId)}`,
+        {
+          credentials: "include"
+        }
       );
       if (response.ok) {
         const result = await response.json();

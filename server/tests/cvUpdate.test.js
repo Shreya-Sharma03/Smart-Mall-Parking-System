@@ -5,7 +5,10 @@
  * Uses Node.js built-in node:test runner, node:assert/strict, native fetch,
  * and an ephemeral HTTP port via app.listen(0).
  */
+process.env.NODE_ENV = "test";
 
+const dns = require("dns");
+dns.setServers(["172.31.1.6"]);
 const { describe, it, before, after, beforeEach } = require("node:test");
 const assert = require("node:assert/strict");
 
@@ -74,12 +77,17 @@ describe("POST /api/slots/cv-update Integration Tests", () => {
     });
 
     after(async () => {
-        // Safely close the ephemeral HTTP server
+        // Close the ephemeral HTTP server
         if (server) {
             await new Promise((resolve) => server.close(resolve));
         }
 
-        // Safely disconnect from the test database
+        // Close the MongoDB session store
+        if (app.sessionStore) {
+            await app.sessionStore.close();
+        }
+
+        // Disconnect from the test database
         await disconnectTestDb();
     });
 
