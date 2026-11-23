@@ -2047,3 +2047,100 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+/* ParkIQ Visitor Header Navigation */
+.clickable-brand {
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.clickable-brand:hover {
+  opacity: 0.85;
+}
+
+.clickable-brand:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 5px;
+  border-radius: 6px;
+}
+
+.visitor-home-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 15px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background: var(--color-surface-container);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.visitor-home-btn:hover {
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+}
+
+@media (max-width: 900px) {
+  .visitor-header {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .header-status-group {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 600px) {
+  .visitor-home-btn {
+    padding: 8px 11px;
+    font-size: 0.78rem;
+  }
+}
+
+/* Visitor Dashboard Hero */
+.visitor-hero {
+  width: 100%;
+  padding: 30px 32px 26px;
+  box-sizing: border-box;
+}
+
+.visitor-hero-content {
+  max-width: 900px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.visitor-hero-content h1 {
+  margin: 0 0 12px;
+  color: #10243a;
+  font-size: clamp(1.8rem, 3vw, 2.65rem);
+  font-weight: 750;
+  line-height: 1.2;
+  letter-spacing: -0.035em;
+}
+
+.visitor-hero-content p {
+  max-width: 720px;
+  margin: 0 auto;
+  color: #64748b;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+@media (max-width: 600px) {
+  .visitor-hero {
+    padding: 24px 18px 20px;
+  }
+
+  .visitor-hero-content p {
+    font-size: 0.92rem;
+  }
+}
+

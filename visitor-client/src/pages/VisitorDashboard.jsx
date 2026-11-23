@@ -344,7 +344,16 @@ export default function VisitorDashboard() {
           onRefreshSlots={refresh}
         />
       )}
-
+      {/* Visitor Welcome Heading */}
+      <section className="visitor-hero">
+        <div className="visitor-hero-content">
+          <h1>Parking made effortless.</h1>
+          <p>
+            A smarter way to manage parking, discover available spaces and enjoy
+            a seamless mall visit.
+          </p>
+        </div>
+      </section>
       <main className="visitor-portal-body">
         {/* ── Left Column: Preferences, Recommendation & Inspector ───── */}
         <aside className="portal-sidebar">

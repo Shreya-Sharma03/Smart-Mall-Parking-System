@@ -1,5 +1,8 @@
+
 import React from 'react';
-import { Compass, Clock, RefreshCw, Wifi, WifiOff } from 'lucide-react';
+import { Clock, RefreshCw, WifiOff, ArrowLeft } from 'lucide-react';
+
+const HOME_URL = 'http://localhost:5173/';
 
 export default function Header({ isBackendOnline, isRefreshing, lastUpdated, onRefresh }) {
   const currentDate = new Date().toLocaleDateString('en-US', {
@@ -9,16 +12,37 @@ export default function Header({ isBackendOnline, isRefreshing, lastUpdated, onR
   });
 
   const timeLabel = lastUpdated
-    ? lastUpdated.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    ? lastUpdated.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      })
     : null;
 
-  // Determine pill state
   const pillOnline = isBackendOnline === true;
   const pillUnknown = isBackendOnline === null;
 
+  const navigateHome = () => {
+    window.location.href = HOME_URL;
+  };
+
+  const handleBrandKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      navigateHome();
+    }
+  };
+
   return (
     <header className="visitor-header">
-      <div className="header-brand-wrap">
+      <div
+        className="header-brand-wrap clickable-brand"
+        onClick={navigateHome}
+        onKeyDown={handleBrandKeyDown}
+        role="button"
+        tabIndex={0}
+        aria-label="Return to ParkIQ Home"
+      >
         <div className="header-logo-badge">PIQ</div>
         <div className="header-titles">
           <h1 className="header-title">ParkIQ</h1>
@@ -27,7 +51,6 @@ export default function Header({ isBackendOnline, isRefreshing, lastUpdated, onR
       </div>
 
       <div className="header-status-group">
-        {/* Backend health indicator */}
         {pillUnknown ? (
           <div className="system-live-pill pill-unknown">
             <span className="live-pulse pulse-unknown" />
@@ -45,14 +68,12 @@ export default function Header({ isBackendOnline, isRefreshing, lastUpdated, onR
           </div>
         )}
 
-        {/* Updated timestamp */}
         {timeLabel && (
           <div className="header-updated-pill">
             <span>Updated: {timeLabel}</span>
           </div>
         )}
 
-        {/* Manual refresh button */}
         {onRefresh && (
           <button
             type="button"
@@ -67,11 +88,19 @@ export default function Header({ isBackendOnline, isRefreshing, lastUpdated, onR
           </button>
         )}
 
-        {/* Date badge */}
         <div className="header-date-badge">
           <Clock size={14} />
           <span>{currentDate}</span>
         </div>
+
+        <button
+          type="button"
+          className="visitor-home-btn"
+          onClick={navigateHome}
+        >
+          <ArrowLeft size={15} />
+          <span>Back to Home</span>
+        </button>
       </div>
     </header>
   );
