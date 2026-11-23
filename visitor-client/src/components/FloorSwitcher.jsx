@@ -6,7 +6,7 @@ export default function FloorSwitcher({ activeFloor, onSelectFloor, floorStats }
   return (
     <div className="floor-switcher-container">
       <div className="floor-switcher-label">
-        <Layers size={18} />
+        <Layers size={16} />
         <span>Basement Floor:</span>
       </div>
 
@@ -24,7 +24,7 @@ export default function FloorSwitcher({ activeFloor, onSelectFloor, floorStats }
               onClick={() => onSelectFloor(floor)}
             >
               <span className="floor-tab-name">
-                {floor === 'B1' ? 'Basement 1 (B1)' : 'Basement 2 (B2)'}
+                {floor === 'B1' ? 'Floor B1' : 'Floor B2'}
               </span>
               <span className={`floor-tab-badge ${count > 0 ? 'has-slots' : 'no-slots'}`}>
                 {count} Available

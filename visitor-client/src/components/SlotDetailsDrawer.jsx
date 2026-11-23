@@ -11,41 +11,48 @@ import {
   ShieldCheck,
   Wrench,
   Lock,
+  Navigation,
 } from 'lucide-react';
 
-export default function SlotDetailsDrawer({ slot, onClose, onOpenReservation }) {
+export default function SlotDetailsDrawer({
+  slot,
+  onClose,
+  onOpenReservation,
+  onNavigateToSlot,
+  isNavigating = false,
+}) {
   if (!slot) return null;
 
-  const { slotId, floor, status, vehicleType, accessible, connectToJunction } = slot;
+  const { slotId, floor, status, vehicleType, accessible } = slot;
 
   const getStatusAdvice = () => {
     switch (status) {
       case 'available':
         return {
           title: 'Ready for Parking & Reservation',
-          desc: 'This space is currently vacant. You can navigate directly or reserve it for 30 minutes.',
-          icon: <CheckCircle2 size={18} className="advice-icon success" />,
+          desc: 'This space is vacant. You can navigate directly or reserve it for 30 minutes.',
+          icon: <CheckCircle2 size={16} className="advice-icon success" />,
           boxClass: 'advice-box-available',
         };
       case 'occupied':
         return {
           title: 'Currently Occupied',
-          desc: 'Another vehicle is parked here. Please select an available green slot.',
-          icon: <AlertTriangle size={18} className="advice-icon warning" />,
+          desc: 'Another vehicle is parked here. Please choose an available green slot.',
+          icon: <AlertTriangle size={16} className="advice-icon warning" />,
           boxClass: 'advice-box-occupied',
         };
       case 'reserved':
         return {
           title: 'Reserved Space',
           desc: 'This bay is currently held under an active reservation.',
-          icon: <Lock size={18} className="advice-icon info" />,
+          icon: <Lock size={16} className="advice-icon info" />,
           boxClass: 'advice-box-reserved',
         };
       case 'maintenance':
         return {
-          title: 'Under Maintenance',
-          desc: 'This bay is temporarily closed for facility upkeep or sensor calibration.',
-          icon: <Wrench size={18} className="advice-icon danger" />,
+          title: 'Out of Service',
+          desc: 'This bay is temporarily closed for facility upkeep or maintenance.',
+          icon: <Wrench size={16} className="advice-icon danger" />,
           boxClass: 'advice-box-maintenance',
         };
       default:
@@ -60,7 +67,7 @@ export default function SlotDetailsDrawer({ slot, onClose, onOpenReservation }) 
     <div className="slot-details-card">
       <div className="details-header">
         <div className="details-header-title">
-          <span className="details-slot-id">{slotId}</span>
+          <span className="details-slot-id">Bay {slotId}</span>
           <span className={`details-status-pill status-${status}`}>{status}</span>
         </div>
         <button
@@ -69,14 +76,14 @@ export default function SlotDetailsDrawer({ slot, onClose, onOpenReservation }) 
           onClick={onClose}
           aria-label="Close details"
         >
-          <X size={18} />
+          <X size={16} />
         </button>
       </div>
 
       <div className="details-grid">
         <div className="details-item">
           <span className="details-item-label">
-            <MapPin size={14} /> Floor Level
+            <MapPin size={13} /> Floor Level
           </span>
           <span className="details-item-value">
             {floor === 'B1' ? 'Basement 1 (B1)' : 'Basement 2 (B2)'}
@@ -85,53 +92,59 @@ export default function SlotDetailsDrawer({ slot, onClose, onOpenReservation }) 
 
         <div className="details-item">
           <span className="details-item-label">
-            <Car size={14} /> Supported Vehicles
+            <Car size={13} /> Vehicle Types
           </span>
           <span className="details-item-value">
-            {vehicleType.map((t) => t.charAt(0).toUpperCase() + t.slice(1)).join(', ')}
+            {Array.isArray(vehicleType)
+              ? vehicleType.map((t) => t.charAt(0).toUpperCase() + t.slice(1)).join(', ')
+              : vehicleType}
           </span>
         </div>
 
         <div className="details-item">
           <span className="details-item-label">
-            <Accessibility size={14} /> Accessible Bay
+            <Accessibility size={13} /> Accessibility
           </span>
           <span className="details-item-value">
             {accessible ? 'Yes (Priority Accessible)' : 'Standard Bay'}
           </span>
         </div>
-
-        <div className="details-item">
-          <span className="details-item-label">
-            <GitCommit size={14} /> Navigation Junction
-          </span>
-          <span className="details-item-value">{connectToJunction}</span>
-        </div>
       </div>
 
       {advice && (
         <div className={`details-advice-box ${advice.boxClass}`}>
-          {advice.icon}
-          <div>
-            <strong>{advice.title}: </strong>
-            <span>{advice.desc}</span>
+          <div className="advice-header">
+            {advice.icon}
+            <span className="advice-title">{advice.title}</span>
           </div>
+          <p className="advice-desc">{advice.desc}</p>
         </div>
       )}
 
-      {/* Reservation Action Button */}
-      {isAvailable && onOpenReservation && (
-        <div className="details-reserve-action">
+      {/* Action buttons */}
+      <div className="details-actions">
+        {isAvailable && onNavigateToSlot && (
           <button
             type="button"
-            className="btn-reserve-bay-cta"
+            className={`btn-navigate-slot ${isNavigating ? 'active' : ''}`}
+            onClick={() => onNavigateToSlot(slot)}
+          >
+            <Navigation size={15} />
+            <span>{isNavigating ? 'Route Displayed' : 'Navigate Here'}</span>
+          </button>
+        )}
+
+        {isAvailable && onOpenReservation && (
+          <button
+            type="button"
+            className="btn-reserve-slot"
             onClick={() => onOpenReservation(slot)}
           >
             <ShieldCheck size={16} />
-            <span>Reserve Bay {slotId} (30 Min Hold)</span>
+            <span>Reserve Spot (30 Mins)</span>
           </button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

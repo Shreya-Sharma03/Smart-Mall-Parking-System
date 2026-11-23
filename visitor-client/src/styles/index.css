@@ -1,35 +1,91 @@
 :root {
-  --primary-color: #2563eb;
-  --primary-hover: #1d4ed8;
-  --primary-light: #eff6ff;
-  --bg-color: #0f172a;
-  --surface-bg: #1e293b;
-  --surface-card: #1e293b;
-  --surface-card-hover: #334155;
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
-  --border-color: #334155;
-  --border-light: #475569;
+  /* Terracotta Drafting System - Warm Ivory Design Tokens */
+  --color-surface: #f7f5ef;
+  --color-surface-dim: #ede9df;
+  --color-surface-card: #ffffff;
+  --color-surface-container: #f2eee5;
+  --color-surface-subtle: #faf8f3;
 
-  /* Parking Status Colors */
-  --status-available: #22c55e;
-  --status-available-bg: rgba(34, 197, 94, 0.12);
-  --status-available-border: rgba(34, 197, 94, 0.35);
+  --color-text: #1a202c;
+  --color-text-secondary: #5e6674;
+  --color-text-muted: #828a99;
 
-  --status-occupied: #ef4444;
-  --status-occupied-bg: rgba(239, 68, 68, 0.12);
-  --status-occupied-border: rgba(239, 68, 68, 0.35);
+  --color-border: #e2dcd2;
+  --color-border-light: #ede9e1;
+  --color-border-focus: #c24d2c;
 
-  --status-reserved: #f59e0b;
-  --status-reserved-bg: rgba(245, 158, 11, 0.12);
-  --status-reserved-border: rgba(245, 158, 11, 0.35);
+  /* Terracotta primary accent */
+  --color-primary: #c24d2c;
+  --color-primary-hover: #a83f21;
+  --color-primary-light: #faece7;
+  --color-primary-border: #f3c2b4;
+  --color-on-primary: #ffffff;
 
-  --status-maintenance: #94a3b8;
-  --status-maintenance-bg: rgba(148, 163, 184, 0.12);
-  --status-maintenance-border: rgba(148, 163, 184, 0.35);
+  /* Muted green for available & healthy */
+  --color-success: #247a54;
+  --color-success-hover: #1c6344;
+  --color-success-light: #edf7f2;
+  --color-success-border: #b8e2cd;
 
-  --road-bg: #090d16;
-  --road-marking: #fbbf24;
+  /* Slate blue for reserved */
+  --color-reserved: #2f699a;
+  --color-reserved-light: #edf4fa;
+  --color-reserved-border: #b8d4ed;
+
+  /* Sandstone ochre for maintenance */
+  --color-maintenance: #a67c1e;
+  --color-maintenance-light: #fbf6ec;
+  --color-maintenance-border: #ebd9ab;
+
+  /* Coral red for cancellations / errors */
+  --color-danger: #c0392b;
+  --color-danger-light: #fdf0ed;
+  --color-danger-border: #f5c4be;
+
+  /* Typography */
+  --font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Elevation */
+  --shadow-sm: 0 1px 3px rgba(26, 32, 44, 0.04), 0 1px 2px rgba(26, 32, 44, 0.02);
+  --shadow-md: 0 3px 6px -1px rgba(26, 32, 44, 0.05), 0 2px 4px -2px rgba(26, 32, 44, 0.03);
+  --shadow-lg: 0 10px 15px -3px rgba(26, 32, 44, 0.07), 0 4px 6px -4px rgba(26, 32, 44, 0.03);
+
+  /* Radii */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* Backward compatible aliases for visitor components */
+  --bg-color: var(--color-surface);
+  --surface-bg: var(--color-surface-card);
+  --surface-card: var(--color-surface-card);
+  --surface-card-hover: var(--color-surface-container);
+  --text-main: var(--color-text);
+  --text-muted: var(--color-text-secondary);
+  --border-color: var(--color-border);
+  --border-light: var(--color-border-light);
+
+  --status-available: var(--color-success);
+  --status-available-bg: var(--color-success-light);
+  --status-available-border: var(--color-success-border);
+
+  --status-occupied: var(--color-primary);
+  --status-occupied-bg: var(--color-primary-light);
+  --status-occupied-border: var(--color-primary-border);
+
+  --status-reserved: var(--color-reserved);
+  --status-reserved-bg: var(--color-reserved-light);
+  --status-reserved-border: var(--color-reserved-border);
+
+  --status-maintenance: var(--color-maintenance);
+  --status-maintenance-bg: var(--color-maintenance-light);
+  --status-maintenance-border: var(--color-maintenance-border);
+
+  --road-bg: #ece7db;
+  --road-marking: #c24d2c;
 }
 
 * {
@@ -38,17 +94,23 @@
   padding: 0;
 }
 
+html, body {
+  min-height: 100%;
+}
+
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  background-color: var(--bg-color);
-  color: var(--text-main);
+  font-family: var(--font-family);
+  background-color: var(--color-surface);
+  color: var(--color-text);
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
 
 button {
   font-family: inherit;
-  border: none;
-  background: none;
   cursor: pointer;
+}
+
+input, select, textarea {
+  font-family: inherit;
 }

@@ -1,6 +1,6 @@
 import React from 'react';
-import { GATES } from '../data/topology';
-import { Car, Bike, Accessibility, LogIn, CheckCircle2, Sparkles } from 'lucide-react';
+import { GATES } from '../data/topology.js';
+import { Car, Bike, Accessibility, LogIn, CheckCircle2, Sparkles, Navigation } from 'lucide-react';
 
 export default function VisitorPreferences({
   selectedGate,
@@ -20,13 +20,13 @@ export default function VisitorPreferences({
         </div>
         <div>
           <h2 className="panel-title">Trip Preferences</h2>
-          <p className="panel-subtitle">Select your entry point and vehicle specs</p>
+          <p className="panel-subtitle">Select entry gate, vehicle type, and requirements</p>
         </div>
       </div>
 
       {/* Entry Gate Selection */}
       <div className="pref-group">
-        <label className="pref-label">Entry Gate</label>
+        <label className="pref-label">Entrance Gate</label>
         <div className="gate-selector-grid">
           {GATES.map((gate) => {
             const isSelected = selectedGate === gate.id;
@@ -50,14 +50,14 @@ export default function VisitorPreferences({
 
       {/* Vehicle Type Selection */}
       <div className="pref-group">
-        <label className="pref-label">Vehicle Type</label>
+        <label className="pref-label">Vehicle Category</label>
         <div className="vehicle-selector-grid">
           <button
             type="button"
             className={`vehicle-btn ${vehicleType === 'car' ? 'active' : ''}`}
             onClick={() => onSelectVehicle('car')}
           >
-            <Car size={20} />
+            <Car size={18} />
             <span>Four-Wheeler (Car)</span>
           </button>
 
@@ -66,7 +66,7 @@ export default function VisitorPreferences({
             className={`vehicle-btn ${vehicleType === 'bike' ? 'active' : ''}`}
             onClick={() => onSelectVehicle('bike')}
           >
-            <Bike size={20} />
+            <Bike size={18} />
             <span>Two-Wheeler (Bike)</span>
           </button>
         </div>
@@ -82,11 +82,11 @@ export default function VisitorPreferences({
           tabIndex={0}
         >
           <div className="accessible-icon-wrap">
-            <Accessibility size={20} />
+            <Accessibility size={18} />
           </div>
           <div className="accessible-text">
             <span className="accessible-title">Accessible Bay Only</span>
-            <span className="accessible-desc">Priority spaces near lifts & concourse</span>
+            <span className="accessible-desc">Priority bays located near main lifts</span>
           </div>
           <div className={`custom-switch ${accessibleOnly ? 'on' : 'off'}`}>
             <span className="switch-handle"></span>
@@ -94,25 +94,23 @@ export default function VisitorPreferences({
         </div>
       </div>
 
-      {/* Matching summary pill */}
+      {/* Matching summary & Find Best Slot CTA */}
       <div className="pref-match-banner">
         <CheckCircle2 size={16} className="match-icon" />
         <span>
-          <strong>{matchingAvailableCount}</strong> matching slots available now
+          <strong>{matchingAvailableCount}</strong> matching bays currently available
         </span>
       </div>
 
-      {/* Find Best Parking Slot Trigger Button */}
-      <div className="find-slot-action-container">
-        <button
-          type="button"
-          className="btn-find-best-slot"
-          onClick={onFindBestSlot}
-        >
-          <Sparkles size={16} />
-          <span>Find Best Parking Slot</span>
-        </button>
-      </div>
+      <button
+        type="button"
+        className="btn-find-best-slot"
+        onClick={onFindBestSlot}
+        disabled={matchingAvailableCount === 0}
+      >
+        <Navigation size={16} />
+        <span>Recommend Best Parking Slot</span>
+      </button>
     </section>
   );
 }

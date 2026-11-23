@@ -7,8 +7,9 @@ import {
   MapPin,
   CheckCircle2,
   ExternalLink,
+  X,
 } from 'lucide-react';
-import { getNodeLabel } from '../data/parkingGraph';
+import { getNodeLabel } from '../data/parkingGraph.js';
 
 export default function RouteOverlay({
   activeRoute,
@@ -25,11 +26,6 @@ export default function RouteOverlay({
   const isMultiFloor = path.some((node) => node.includes('R1'));
   const isOppositeFloor = currentFloor !== destinationFloor;
 
-  // Filter path nodes that belong to the currently viewed floor (or the ramp connecting it)
-  const floorNodes = path.filter(
-    (node) => node.startsWith(currentFloor) || (currentFloor === 'B1' && node === 'B1-R1') || (currentFloor === 'B2' && node === 'B2-R1')
-  );
-
   return (
     <div className="route-navigation-bar">
       <div className="route-bar-top">
@@ -38,10 +34,11 @@ export default function RouteOverlay({
             <Navigation size={18} />
           </div>
           <div>
-            <h4 className="route-bar-title">Active Navigation Route</h4>
-            <span className="route-bar-sub">
-              Target: <strong>{slot.slotId}</strong> (Floor {slot.floor}) • Total Distance: <strong>{distance}m</strong> • Est. {estimatedTime}
-            </span>
+            <div className="route-bar-title">Active Navigation Route</div>
+            <div className="route-bar-sub">
+              Target: <strong>Bay {slot.slotId}</strong> (Floor {slot.floor}) • Distance: <strong>{distance}m</strong> • Travel:{' '}
+              <strong>{estimatedTime}</strong>
+            </div>
           </div>
         </div>
 
@@ -49,8 +46,10 @@ export default function RouteOverlay({
           type="button"
           className="route-bar-clear-btn"
           onClick={onClearRoute}
+          aria-label="Clear navigation route"
         >
-          Exit Route View
+          <X size={14} />
+          <span>Exit Route</span>
         </button>
       </div>
 
@@ -60,8 +59,10 @@ export default function RouteOverlay({
           <div className="alert-text-left">
             <CornerDownRight size={18} />
             <div>
-              <strong>Multi-Floor Route: Target slot is on {destinationFloor}</strong>
-              <p>You are viewing Floor {currentFloor}. Follow Ramp B1-R1 down to Floor B2 to reach {slot.slotId}.</p>
+              <strong>Multi-Floor Route: Destination is on Floor {destinationFloor}</strong>
+              <p>
+                You are currently viewing Floor {currentFloor}. Follow Ramp B1-R1 to reach Bay {slot.slotId}.
+              </p>
             </div>
           </div>
           <button
@@ -69,7 +70,7 @@ export default function RouteOverlay({
             className="btn-switch-to-dest-floor"
             onClick={() => onSwitchFloor(destinationFloor)}
           >
-            <span>Switch Map to {destinationFloor}</span>
+            <span>Switch to Floor {destinationFloor}</span>
             <ExternalLink size={14} />
           </button>
         </div>
@@ -77,7 +78,7 @@ export default function RouteOverlay({
 
       {/* Step-by-Step Path Breadcrumbs */}
       <div className="route-breadcrumbs-container">
-        <span className="route-breadcrumb-label">Driving Sequence:</span>
+        <span className="route-breadcrumb-label">Route Sequence:</span>
         <div className="route-breadcrumbs-list">
           {path.map((nodeId, index) => {
             const isStart = index === 0;
@@ -98,12 +99,10 @@ export default function RouteOverlay({
                   {isStart && <MapPin size={12} />}
                   {isRamp && <CornerDownRight size={12} />}
                   {isEnd && <CheckCircle2 size={12} />}
-                  {!isStart && !isEnd && !isRamp && <GitCommit size={12} />}
-                  <span>{nodeId}</span>
+                  <span>{getNodeLabel(nodeId)}</span>
                 </div>
-
                 {index < path.length - 1 && (
-                  <ArrowRight size={12} className="route-crumb-arrow" />
+                  <ArrowRight size={12} className="crumb-arrow" />
                 )}
               </React.Fragment>
             );

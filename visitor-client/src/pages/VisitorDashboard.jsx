@@ -12,7 +12,13 @@ import ActiveReservationBanner from '../components/ActiveReservationBanner.jsx';
 import ReservationModal from '../components/ReservationModal.jsx';
 import useParking from '../hooks/useParking.js';
 import { computeFloorStats } from '../data/mockSlots.js';
-import { getRecommendedSlots, getBackendRecommendedSlots } from '../services/recommendationService.js';
+import { PARKING_GRAPH } from '../data/parkingGraph.js';
+import { dijkstra } from '../algorithms/dijkstra.js';
+import {
+  getRecommendedSlots,
+  getBackendRecommendedSlots,
+  calculateEstimatedTime,
+} from '../services/recommendationService.js';
 import { Sparkles, Info } from 'lucide-react';
 
 const STORAGE_KEY_ACTIVE_RES = 'smart_mall_active_res_id';
@@ -39,7 +45,6 @@ export default function VisitorDashboard() {
   const [activeRoute, setActiveRoute] = useState(null);
 
   // ── Reservation State ─────────────────────────────────────────────────────
-  // Store strictly the reservation ID in localStorage
   const [activeReservationId, setActiveReservationId] = useState(() => {
     try {
       return localStorage.getItem(STORAGE_KEY_ACTIVE_RES) || null;
@@ -50,7 +55,7 @@ export default function VisitorDashboard() {
 
   const [reservationModalSlot, setReservationModalSlot] = useState(null);
 
-  // ── Recommendation state (backend preferred, local Dijkstra fallback) ─────
+  // ── Recommendation state ──────────────────────────────────────────────────
   const [recommendation, setRecommendation] = useState(null);
   const [recLoading, setRecLoading] = useState(false);
 
@@ -72,7 +77,7 @@ export default function VisitorDashboard() {
     }).length;
   }, [slots, vehicleType, accessibleOnly]);
 
-  // ── Recommendation: attempt backend first, fall back to local Dijkstra ────
+  // ── Compute recommendation from backend or local Dijkstra fallback ────────
   const computeRecommendation = useCallback(async () => {
     if (slots.length === 0) return;
     setRecLoading(true);
@@ -90,10 +95,8 @@ export default function VisitorDashboard() {
           setRecLoading(false);
           return;
         }
-        // Backend returned no results (all full/no match)
         setRecommendation(backendRec);
       } else {
-        // Backend offline — run local Dijkstra on slot data
         const localRec = getRecommendedSlots({
           slots,
           gateId: selectedGate,
@@ -103,7 +106,6 @@ export default function VisitorDashboard() {
         setRecommendation(localRec);
       }
     } catch {
-      // Any unexpected error — fall back to local
       const localRec = getRecommendedSlots({
         slots,
         gateId: selectedGate,
@@ -116,36 +118,47 @@ export default function VisitorDashboard() {
     }
   }, [slots, selectedGate, vehicleType, accessibleOnly, isBackendOnline]);
 
-  // Recompute recommendation whenever its inputs change
   useEffect(() => {
     computeRecommendation();
   }, [computeRecommendation]);
 
-  // ── Synchronize activeRoute when recommendation changes ───────────────────
+  // ── Helper to calculate route to a given slot ─────────────────────────────
+  const calculateRouteToSlot = useCallback((slot, gateId = selectedGate) => {
+    if (!slot) return null;
+    const routeResult = dijkstra(PARKING_GRAPH, gateId, slot.slotId);
+    if (!routeResult || !routeResult.reachable) return null;
+
+    const est = calculateEstimatedTime(routeResult.distance);
+    return {
+      slot,
+      path: routeResult.path,
+      distance: routeResult.distance,
+      estimatedTime: est.formatted,
+      estimatedTimeDesc: est.description,
+      requiresFloorChange: routeResult.path.some((n) => n.includes('R1')),
+    };
+  }, [selectedGate]);
+
+  // ── Synchronize activeRoute when recommendation or gate changes ───────────
   useEffect(() => {
     if (!recommendation || !recommendation.success || !recommendation.best) {
-      setActiveRoute(null);
       return;
     }
 
     if (activeRoute) {
-      const isStillBest = activeRoute.slot.slotId === recommendation.best.slot.slotId;
-      const stillInAlts = recommendation.alternatives?.find(
-        (alt) => alt.slot.slotId === activeRoute.slot.slotId
-      );
-
-      if (isStillBest) {
-        setActiveRoute(recommendation.best);
-      } else if (stillInAlts) {
-        setActiveRoute(stillInAlts);
+      const currentDestId = activeRoute.slot.slotId;
+      const slot = slots.find((s) => s.slotId === currentDestId);
+      if (slot && slot.status === 'available') {
+        const updated = calculateRouteToSlot(slot, selectedGate);
+        if (updated) setActiveRoute(updated);
       } else {
-        setActiveRoute(null);
+        setActiveRoute(recommendation.best);
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recommendation]);
+  }, [selectedGate, recommendation]);
 
-  // ── Clear drawer if the slot no longer matches filters ───────────────────
+  // ── Clear drawer if the selected slot no longer matches filters ──────────
   useEffect(() => {
     if (selectedSlotId) {
       const slot = slots.find((s) => s.slotId === selectedSlotId);
@@ -161,8 +174,16 @@ export default function VisitorDashboard() {
   // ── Preference handlers ───────────────────────────────────────────────────
   const handleSelectGate = (gateId) => {
     setSelectedGate(gateId);
-    setActiveRoute(null);
-    setSelectedSlotId(null);
+    if (selectedSlotId) {
+      const currentSlot = slots.find((s) => s.slotId === selectedSlotId);
+      if (currentSlot && currentSlot.status === 'available') {
+        const newRoute = calculateRouteToSlot(currentSlot, gateId);
+        if (newRoute) {
+          setActiveRoute(newRoute);
+          return;
+        }
+      }
+    }
   };
 
   const handleSelectVehicle = (type) => {
@@ -182,7 +203,28 @@ export default function VisitorDashboard() {
   const selectedSlot = slots.find((s) => s.slotId === selectedSlotId) || null;
 
   const handleSelectSlot = (slot) => {
-    setSelectedSlotId(selectedSlotId === slot.slotId ? null : slot.slotId);
+    if (selectedSlotId === slot.slotId) {
+      setSelectedSlotId(null);
+      return;
+    }
+
+    setSelectedSlotId(slot.slotId);
+
+    // If clicking an available slot, immediately compute and highlight the route to it!
+    if (slot.status === 'available') {
+      const newRoute = calculateRouteToSlot(slot);
+      if (newRoute) {
+        setActiveRoute(newRoute);
+      }
+    }
+  };
+
+  const handleNavigateToSlot = (slot) => {
+    const newRoute = calculateRouteToSlot(slot);
+    if (newRoute) {
+      setActiveRoute(newRoute);
+      setSelectedSlotId(slot.slotId);
+    }
   };
 
   // ── Route visualization ───────────────────────────────────────────────────
@@ -192,20 +234,26 @@ export default function VisitorDashboard() {
     } else {
       setActiveRoute(candidate);
       setSelectedSlotId(candidate.slot.slotId);
+      if (candidate.slot.floor !== activeFloor) {
+        setActiveFloor(candidate.slot.floor);
+      }
     }
   };
 
   const handleSelectAlternative = (altCandidate) => {
     setActiveRoute(altCandidate);
     setSelectedSlotId(altCandidate.slot.slotId);
+    if (altCandidate.slot.floor !== activeFloor) {
+      setActiveFloor(altCandidate.slot.floor);
+    }
   };
 
   const handleFindBestSlot = () => {
     if (recommendation?.success && recommendation.best) {
       setActiveRoute(recommendation.best);
       setSelectedSlotId(recommendation.best.slot.slotId);
-      if (recommendation.best.slot.floor === 'B2' && activeFloor !== 'B1') {
-        setActiveFloor('B1');
+      if (recommendation.best.slot.floor !== activeFloor) {
+        setActiveFloor(recommendation.best.slot.floor);
       }
     } else {
       setActiveRoute(null);
@@ -228,15 +276,12 @@ export default function VisitorDashboard() {
     try {
       localStorage.setItem(STORAGE_KEY_ACTIVE_RES, resId);
     } catch {
-      // storage unavailable / quota exceeded
+      // storage unavailable
     }
 
     setReservationModalSlot(null);
-
-    // Refresh slot availability immediately from backend so the map reflects status 'reserved'
     refresh();
 
-    // Select the newly reserved slot so the user can inspect it
     if (createdReservation.slotId) {
       setSelectedSlotId(createdReservation.slotId);
       if (createdReservation.floor && createdReservation.floor !== activeFloor) {
@@ -246,7 +291,6 @@ export default function VisitorDashboard() {
   };
 
   const handleReservationCancelled = () => {
-    // Refresh slot availability immediately
     refresh();
   };
 
@@ -266,7 +310,7 @@ export default function VisitorDashboard() {
         <Header isBackendOnline={null} isRefreshing={false} />
         <div className="dashboard-loading-state">
           <div className="loading-spinner" />
-          <p className="loading-label">Loading parking data…</p>
+          <p className="loading-label">Loading real-time parking data…</p>
         </div>
       </div>
     );
@@ -291,7 +335,7 @@ export default function VisitorDashboard() {
         onRefresh={refresh}
       />
 
-      {/* Active Visitor Reservation Banner (Restored via ID from localStorage) */}
+      {/* Active Visitor Reservation Banner */}
       {activeReservationId && (
         <ActiveReservationBanner
           activeReservationId={activeReservationId}
@@ -302,7 +346,7 @@ export default function VisitorDashboard() {
       )}
 
       <main className="visitor-portal-body">
-        {/* ── Left Column ───────────────────────────────────────────── */}
+        {/* ── Left Column: Preferences, Recommendation & Inspector ───── */}
         <aside className="portal-sidebar">
           {/* Trip Preferences Selector */}
           <VisitorPreferences
@@ -322,8 +366,8 @@ export default function VisitorDashboard() {
               <div className="recommendation-header">
                 <div className="loading-spinner-sm" />
                 <div>
-                  <h3 className="rec-title">Finding Best Route…</h3>
-                  <span className="rec-sub">Running Dijkstra shortest path</span>
+                  <h3 className="rec-title">Finding Shortest Route…</h3>
+                  <span className="rec-sub">Calculating shortest path</span>
                 </div>
               </div>
             </div>
@@ -334,7 +378,6 @@ export default function VisitorDashboard() {
               onToggleRoute={handleToggleRoute}
               onSelectAlternative={handleSelectAlternative}
               activeRouteSlotId={activeRoute?.slot?.slotId}
-              onOpenReservation={handleOpenReservation}
             />
           )}
 
@@ -344,17 +387,19 @@ export default function VisitorDashboard() {
               slot={selectedSlot}
               onClose={() => setSelectedSlotId(null)}
               onOpenReservation={handleOpenReservation}
+              onNavigateToSlot={handleNavigateToSlot}
+              isNavigating={Boolean(activeRoute && activeRoute.slot.slotId === selectedSlot.slotId)}
             />
           ) : (
             <div className="select-slot-prompt-card">
               <div className="prompt-icon-wrap">
-                <Info size={22} />
+                <Info size={18} />
               </div>
               <div>
                 <h4 className="prompt-title">Interactive Slot Inspector</h4>
                 <p className="prompt-desc">
                   Click any parking bay on the blueprint map to inspect its real-time
-                  status, vehicle compatibility, or book a 30-minute reservation.
+                  status, calculate direct navigation, or reserve it for 30 minutes.
                 </p>
               </div>
             </div>
@@ -363,18 +408,18 @@ export default function VisitorDashboard() {
           {/* Mall Tip Card */}
           <div className="mall-tip-card">
             <div className="tip-header">
-              <Sparkles size={16} />
-              <span>Smart Mall Navigation</span>
+              <Sparkles size={14} />
+              <span>Visitor Guide</span>
             </div>
             <p className="tip-body">
               {activeFloor === 'B1'
-                ? 'Basement 1 connects Gate A and Gate B. Ramp B1-R1 leads down to Basement 2.'
-                : 'Basement 2 is reached via Ramp B1-R1. Follow corridor signs from Junction B2-J2.'}
+                ? 'Basement 1 connects Gate A and Gate B. Ramp B1-R1 provides direct transit down to Basement 2.'
+                : 'Basement 2 is reached via Ramp B1-R1. Follow signs along the main circulation aisle.'}
             </p>
           </div>
         </aside>
 
-        {/* ── Right Column ──────────────────────────────────────────── */}
+        {/* ── Right Column: CAD Floor Map Canvas & Route Overlay ─────── */}
         <section className="portal-map-area">
           {/* Active Navigation Route Bar */}
           {activeRoute && (
@@ -404,7 +449,7 @@ export default function VisitorDashboard() {
             />
           </div>
 
-          {/* Interactive 2D Blueprint Map */}
+          {/* Interactive CAD Blueprint Map with Dynamic Highlighted Route */}
           <ParkingFloorMap
             floor={activeFloor}
             slots={slots}
@@ -413,6 +458,9 @@ export default function VisitorDashboard() {
             vehicleType={vehicleType}
             accessibleOnly={accessibleOnly}
             activeRoute={activeRoute}
+            onSwitchFloor={setActiveFloor}
+            selectedGate={selectedGate}
+            onSelectGate={handleSelectGate}
           />
         </section>
       </main>

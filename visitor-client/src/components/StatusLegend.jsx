@@ -21,16 +21,16 @@ const LEGEND_ITEMS = [
   },
   {
     status: 'maintenance',
-    label: 'Maintenance',
+    label: 'Out of Service',
     colorClass: 'legend-maintenance',
-    description: 'Temporarily out of service',
+    description: 'Temporarily closed for maintenance',
   },
 ];
 
 export default function StatusLegend({ counts = {} }) {
   return (
     <div className="status-legend-card">
-      <span className="legend-heading">Parking Slot Status:</span>
+      <span className="legend-heading">Slot Status:</span>
       <div className="legend-items">
         {LEGEND_ITEMS.map((item) => (
           <div key={item.status} className="legend-item" title={item.description}>

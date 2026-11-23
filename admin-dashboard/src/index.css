@@ -1,5 +1,62 @@
+:root {
+  /* Warm Ivory & Terracotta Design Tokens */
+  --color-surface: #f7f5ef;
+  --color-surface-dim: #ede9df;
+  --color-surface-card: #ffffff;
+  --color-surface-container: #f2eee5;
+  --color-surface-subtle: #faf8f3;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  --color-text: #1a202c;
+  --color-text-secondary: #5e6674;
+  --color-text-muted: #828a99;
+
+  --color-border: #e2dcd2;
+  --color-border-light: #ede9e1;
+  --color-border-focus: #c24d2c;
+
+  /* Terracotta primary accent */
+  --color-primary: #c24d2c;
+  --color-primary-hover: #a83f21;
+  --color-primary-light: #faece7;
+  --color-primary-border: #f3c2b4;
+  --color-on-primary: #ffffff;
+
+  /* Muted green for available & healthy */
+  --color-success: #247a54;
+  --color-success-hover: #1c6344;
+  --color-success-light: #edf7f2;
+  --color-success-border: #b8e2cd;
+
+  /* Slate blue for reserved */
+  --color-reserved: #2f699a;
+  --color-reserved-light: #edf4fa;
+  --color-reserved-border: #b8d4ed;
+
+  /* Sandstone ochre for maintenance */
+  --color-maintenance: #a67c1e;
+  --color-maintenance-light: #fbf6ec;
+  --color-maintenance-border: #ebd9ab;
+
+  /* Coral red for cancellations / errors */
+  --color-danger: #c0392b;
+  --color-danger-light: #fdf0ed;
+  --color-danger-border: #f5c4be;
+
+  /* Typography */
+  --font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Elevation */
+  --shadow-sm: 0 1px 3px rgba(26, 32, 44, 0.04), 0 1px 2px rgba(26, 32, 44, 0.02);
+  --shadow-md: 0 3px 6px -1px rgba(26, 32, 44, 0.05), 0 2px 4px -2px rgba(26, 32, 44, 0.03);
+  --shadow-lg: 0 10px 15px -3px rgba(26, 32, 44, 0.07), 0 4px 6px -4px rgba(26, 32, 44, 0.03);
+
+  /* Radii */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+}
 
 * {
   box-sizing: border-box;
@@ -9,16 +66,23 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  font-family: 'Inter', Arial, sans-serif;
-  background: #f5f7fb;
+  font-family: var(--font-family);
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 button,
 input,
-select {
-  font: inherit;
+select,
+textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
 }
 
-button {
-  font-family: inherit;
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
 }

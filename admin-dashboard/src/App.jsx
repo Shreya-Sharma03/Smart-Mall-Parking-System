@@ -1,23 +1,21 @@
-
 import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
+  Layers,
   ParkingSquare,
-  Car,
-  CheckCircle,
-  Wrench,
-  Clock,
+  CalendarClock,
   RefreshCw,
   Search,
-  MapPin,
-  Activity,
-  AlertCircle,
-  Menu,
-  X,
+  CheckCircle2,
+  Car,
+  Clock,
+  Wrench,
   Plus,
   Trash2,
   Pencil,
-  CalendarClock
+  AlertCircle,
+  Activity,
+  Check
 } from "lucide-react";
 
 import "./App.css";
@@ -67,16 +65,16 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Four original pages: "Overview", "Floor Overview", "Parking Slots", "Reservations"
   const [activePage, setActivePage] = useState("Overview");
 
   const [selectedFloor, setSelectedFloor] = useState("All");
   const [selectedStatus, setSelectedStatus] = useState("All");
-  const [selectedAccessible, setSelectedAccessible] = useState("all");
+  const [selectedAccessible, setSelectedAccessible] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
 
   const [lastUpdated, setLastUpdated] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [updatingSlotId, setUpdatingSlotId] = useState(null);
   const [deletingSlotId, setDeletingSlotId] = useState(null);
@@ -106,14 +104,14 @@ function App() {
       ]);
 
       if (!statsResponse.ok || !slotsResponse.ok) {
-        throw new Error("Could not fetch parking data.");
+        throw new Error("Unable to connect to the parking server.");
       }
 
       const statsResult = await statsResponse.json();
       const slotsResult = await slotsResponse.json();
 
       if (!statsResult.success || !slotsResult.success) {
-        throw new Error("Backend returned an unsuccessful response.");
+        throw new Error("Server returned an unsuccessful response.");
       }
 
       setStats(statsResult.data);
@@ -152,7 +150,7 @@ function App() {
         throw new Error(result.message || "Could not update slot status.");
       }
 
-      setActionMessage(`${slotId} updated to ${newStatus}.`);
+      setActionMessage(`Slot ${slotId} status updated to ${newStatus}.`);
       setActionMessageType("success");
 
       await fetchDashboardData();
@@ -194,7 +192,7 @@ function App() {
         throw new Error(result.message || "Could not delete parking slot.");
       }
 
-      setActionMessage(`${slotId} deleted successfully.`);
+      setActionMessage(`Slot ${slotId} deleted successfully.`);
       setActionMessageType("success");
 
       await fetchDashboardData();
@@ -206,99 +204,98 @@ function App() {
       setDeletingSlotId(null);
     }
   };
+
   const handleEditClick = (slot) => {
-  setEditingSlot({
-    slotId: slot.slotId,
-    floor: slot.floor || "B1",
-    vehicleType: Array.isArray(slot.vehicleType)
-      ? [...slot.vehicleType]
-      : [],
-    accessible: Boolean(slot.accessible),
-    nodeId: slot.nodeId || "",
-    x: slot.location?.x ?? "",
-    y: slot.location?.y ?? ""
-  });
+    setEditingSlot({
+      slotId: slot.slotId,
+      floor: slot.floor || "B1",
+      vehicleType: Array.isArray(slot.vehicleType)
+        ? [...slot.vehicleType]
+        : [],
+      accessible: Boolean(slot.accessible),
+      nodeId: slot.nodeId || "",
+      x: slot.location?.x ?? "",
+      y: slot.location?.y ?? ""
+    });
 
-  setShowEditForm(true);
-  setShowAddForm(false);
-  setActionMessage("");
-  setActionMessageType("");
-};
-
-
-const handleEditSubmit = async (e) => {
-  e.preventDefault();
-
-  if (!editingSlot) return;
-
-  if (
-    !editingSlot.floor ||
-    !editingSlot.nodeId.trim() ||
-    editingSlot.vehicleType.length === 0 ||
-    editingSlot.x === "" ||
-    editingSlot.y === "" ||
-    !Number.isFinite(Number(editingSlot.x)) ||
-    !Number.isFinite(Number(editingSlot.y))
-  ) {
-    setActionMessage("Please enter valid details in all required fields.");
-    setActionMessageType("error");
-    return;
-  }
-
-  try {
-    setSavingEdit(true);
+    setShowEditForm(true);
+    setShowAddForm(false);
     setActionMessage("");
     setActionMessageType("");
+  };
 
-    const response = await fetch(
-      `${API_URL}/${encodeURIComponent(editingSlot.slotId)}`,
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          floor: editingSlot.floor,
-          vehicleType: editingSlot.vehicleType,
-          accessible: editingSlot.accessible,
-          nodeId: editingSlot.nodeId.trim(),
-          location: {
-            x: Number(editingSlot.x),
-            y: Number(editingSlot.y)
-          }
-        })
-      }
-    );
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
 
-    const result = await response.json();
+    if (!editingSlot) return;
 
-    if (!response.ok || result.success === false) {
-      throw new Error(result.message || "Could not update parking slot.");
+    if (
+      !editingSlot.floor ||
+      !editingSlot.nodeId.trim() ||
+      editingSlot.vehicleType.length === 0 ||
+      editingSlot.x === "" ||
+      editingSlot.y === "" ||
+      !Number.isFinite(Number(editingSlot.x)) ||
+      !Number.isFinite(Number(editingSlot.y))
+    ) {
+      setActionMessage("Please enter valid details in all required fields.");
+      setActionMessageType("error");
+      return;
     }
 
-    setActionMessage(`${editingSlot.slotId} updated successfully.`);
-    setActionMessageType("success");
-    setShowEditForm(false);
-    setEditingSlot(null);
+    try {
+      setSavingEdit(true);
+      setActionMessage("");
+      setActionMessageType("");
 
-    await fetchDashboardData();
+      const response = await fetch(
+        `${API_URL}/${encodeURIComponent(editingSlot.slotId)}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            floor: editingSlot.floor,
+            vehicleType: editingSlot.vehicleType,
+            accessible: editingSlot.accessible,
+            nodeId: editingSlot.nodeId.trim(),
+            location: {
+              x: Number(editingSlot.x),
+              y: Number(editingSlot.y)
+            }
+          })
+        }
+      );
 
-  } catch (err) {
-    setActionMessage(err.message || "Unable to update parking slot.");
-    setActionMessageType("error");
-  } finally {
-    setSavingEdit(false);
-  }
-};
-  // Update a field in the new-slot form
+      const result = await response.json();
+
+      if (!response.ok || result.success === false) {
+        throw new Error(result.message || "Could not update parking slot.");
+      }
+
+      setActionMessage(`Slot ${editingSlot.slotId} updated successfully.`);
+      setActionMessageType("success");
+      setShowEditForm(false);
+      setEditingSlot(null);
+
+      await fetchDashboardData();
+
+    } catch (err) {
+      setActionMessage(err.message || "Unable to update parking slot.");
+      setActionMessageType("error");
+    } finally {
+      setSavingEdit(false);
+    }
+  };
+
   const updateNewSlot = (field, value) => {
-    setNewSlot((previous) => ({
-      ...previous,
+    setNewSlot((prev) => ({
+      ...prev,
       [field]: value
     }));
   };
 
-  // Add a new parking slot
   const handleAddSlot = async (e) => {
     e.preventDefault();
 
@@ -374,7 +371,7 @@ const handleEditSubmit = async (e) => {
         throw new Error(result.message || "Could not add parking slot.");
       }
 
-      setActionMessage(`${slotId} added successfully.`);
+      setActionMessage(`Slot ${slotId} added successfully.`);
       setActionMessageType("success");
 
       setNewSlot(EMPTY_SLOT);
@@ -390,7 +387,7 @@ const handleEditSubmit = async (e) => {
     }
   };
 
-  // Initial load and automatic refresh
+  // Initial load and automatic polling every 10 seconds
   useEffect(() => {
     fetchDashboardData();
 
@@ -401,10 +398,8 @@ const handleEditSubmit = async (e) => {
     return () => clearInterval(interval);
   }, []);
 
-  // Sort all slots once for consistent display
   const sortedSlots = sortParkingSlots(slots);
 
-  // Filter parking slots
   const filteredSlots = sortedSlots.filter((slot) => {
     const matchesFloor =
       selectedFloor === "All" || slot.floor === selectedFloor;
@@ -427,37 +422,50 @@ const handleEditSubmit = async (e) => {
     );
   });
 
-  // Dashboard cards
+  const totalSlotsCount = stats?.totalSlots ?? slots.length ?? 0;
+  const availCount = stats?.statusCounts?.available ?? 0;
+  const occCount = stats?.statusCounts?.occupied ?? 0;
+  const rsvdCount = stats?.statusCounts?.reserved ?? 0;
+  const maintCount = stats?.statusCounts?.maintenance ?? 0;
+
+  const availPct = totalSlotsCount ? Math.round((availCount / totalSlotsCount) * 100) : 0;
+  const occPct = totalSlotsCount ? Math.round((occCount / totalSlotsCount) * 100) : 0;
+
   const statusCards = [
     {
-      title: "Total Slots",
-      value: stats?.totalSlots ?? 0,
+      title: "Total Parking Slots",
+      value: totalSlotsCount,
       icon: ParkingSquare,
-      color: "blue"
+      color: "blue",
+      subtext: "System capacity"
     },
     {
-      title: "Available",
-      value: stats?.statusCounts?.available ?? 0,
-      icon: CheckCircle,
-      color: "green"
+      title: "Available Slots",
+      value: availCount,
+      icon: CheckCircle2,
+      color: "green",
+      subtext: `${availPct}% available`
     },
     {
-      title: "Occupied",
-      value: stats?.statusCounts?.occupied ?? 0,
+      title: "Occupied Slots",
+      value: occCount,
       icon: Car,
-      color: "orange"
+      color: "terracotta",
+      subtext: `${occPct}% occupied`
     },
     {
-      title: "Reserved",
-      value: stats?.statusCounts?.reserved ?? 0,
+      title: "Active Reservations",
+      value: rsvdCount,
       icon: Clock,
-      color: "purple"
+      color: "slate",
+      subtext: "Secured spots"
     },
     {
       title: "Maintenance",
-      value: stats?.statusCounts?.maintenance ?? 0,
+      value: maintCount,
       icon: Wrench,
-      color: "red"
+      color: "amber",
+      subtext: "Offline / calibration"
     }
   ];
 
@@ -465,649 +473,697 @@ const handleEditSubmit = async (e) => {
 
   const formatTime = () => {
     return lastUpdated
-      ? lastUpdated.toLocaleTimeString()
-      : "Not updated yet";
+      ? lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })
+      : "Updating...";
   };
 
   return (
-    <div className="dashboard-container">
-
-      {sidebarOpen && (
-        <div
-          className="sidebar-overlay"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside className={`sidebar ${sidebarOpen ? "sidebar-open" : ""}`}>
-        <div className="brand">
-          <div className="brand-icon">
-            <ParkingSquare size={25} />
+    <div className="dashboard-app">
+      {/* Top Professional Navigation Header */}
+      <header className="navbar-header">
+        <div className="navbar-container">
+          <div className="navbar-brand">
+            <div className="brand-logo">PIQ</div>
+            <div className="brand-details">
+              <span className="brand-name">ParkIQ</span>
+              <span className="brand-tagline">Parking Management</span>
+            </div>
           </div>
 
-          <div>
-            <h2>SmartPark</h2>
-            <p>Parking Management</p>
+          <div className="status-indicator-badge">
+            <span className="status-live-dot"></span>
+            <span>CV Service: Active</span>
+          </div>
+
+          <div className="last-sync-tag">
+            <span>Updated: {formatTime()}</span>
           </div>
 
           <button
-            className="mobile-close"
-            onClick={() => setSidebarOpen(false)}
+            className="refresh-btn"
+            onClick={() => fetchDashboardData(true)}
+            disabled={refreshing}
+            title="Refresh dashboard data"
           >
-            <X size={20} />
-          </button>
-        </div>
-
-        <div className="sidebar-section">
-          <p className="sidebar-label">MAIN MENU</p>
-
-          <button
-            className={`nav-item ${activePage === "Overview" ? "active" : ""}`}
-            onClick={() => {
-              setActivePage("Overview");
-              setSidebarOpen(false);
-            }}
-          >
-            <LayoutDashboard size={19} />
-            <span>Overview</span>
+            <RefreshCw size={14} className={refreshing ? "spinning" : ""} />
+            <span>Refresh</span>
           </button>
 
-          <button
-            className={`nav-item ${activePage === "Parking Slots" ? "active" : ""}`}
-            onClick={() => {
-              setActivePage("Parking Slots");
-              setSidebarOpen(false);
-            }}
-          >
-            <ParkingSquare size={19} />
-            <span>Parking Slots</span>
-          </button>
-
-          <button
-            className={`nav-item ${activePage === "Reservations" ? "active" : ""}`}
-            onClick={() => {
-              setActivePage("Reservations");
-              setSidebarOpen(false);
-            }}
-          >
-            <CalendarClock size={19} />
-            <span>Reservations</span>
-          </button>
-        </div>
-
-        <div className="sidebar-bottom">
-          <div className="admin-profile">
-            <div className="profile-avatar">A</div>
-
-            <div>
-              <h4>Administrator</h4>
-              <p>Parking Manager</p>
+          <div className="user-profile-badge">
+            <div className="user-avatar">A</div>
+            <div className="user-info">
+              <span className="user-name">Admin</span>
+              <span className="user-role">Manager</span>
             </div>
           </div>
         </div>
-      </aside>
 
-      {/* Main content */}
-      <main className="main-content">
-
-        <header className="topbar">
-          <div className="topbar-left">
-
+        {/* Four Original Main Navigation Tabs */}
+        <div className="navbar-tabs-wrapper">
+          <nav className="navbar-tabs" aria-label="Main Navigation">
             <button
-              className="mobile-menu"
-              onClick={() => setSidebarOpen(true)}
+              className={`tab-item ${activePage === "Overview" ? "active" : ""}`}
+              onClick={() => setActivePage("Overview")}
             >
-              <Menu size={22} />
+              <LayoutDashboard size={16} />
+              <span>Overview</span>
             </button>
 
-            <div>
-              <p className="breadcrumb">SmartPark / Admin</p>
-              <h1>{activePage}</h1>
-            </div>
-          </div>
-
-          <div className="topbar-right">
-            <div className="system-status">
-              <span className="live-dot"></span>
-              System monitoring
-            </div>
+            <button
+              className={`tab-item ${activePage === "Floor Overview" ? "active" : ""}`}
+              onClick={() => setActivePage("Floor Overview")}
+            >
+              <Layers size={16} />
+              <span>Floor Overview</span>
+            </button>
 
             <button
-              className="refresh-button"
+              className={`tab-item ${activePage === "Parking Slots" ? "active" : ""}`}
+              onClick={() => setActivePage("Parking Slots")}
+            >
+              <ParkingSquare size={16} />
+              <span>Parking Slots</span>
+            </button>
+
+            <button
+              className={`tab-item ${activePage === "Reservations" ? "active" : ""}`}
+              onClick={() => setActivePage("Reservations")}
+            >
+              <CalendarClock size={16} />
+              <span>Reservations</span>
+            </button>
+          </nav>
+        </div>
+      </header>
+
+      {/* Main Dashboard Content Area */}
+      <main className="dashboard-content">
+        {/* Error Alert Banner */}
+        {error && (
+          <div className="alert-banner error" role="alert">
+            <AlertCircle size={18} />
+            <div className="alert-content">
+              <strong>Connection Error:</strong> {error}
+            </div>
+            <button
+              className="alert-retry-btn"
               onClick={() => fetchDashboardData(true)}
-              disabled={refreshing}
+              disabled={loading || refreshing}
             >
-              <RefreshCw
-                size={16}
-                className={refreshing ? "spinning" : ""}
-              />
-              <span>Refresh</span>
+              Retry
             </button>
           </div>
-        </header>
+        )}
 
-        <section className="page-content">
-
-          <div className="welcome-section">
-            <div>
-              <h2>Parking Overview</h2>
-              <p>
-                Monitor parking availability and manage your mall parking system.
-              </p>
+        {/* Action Success / Error Notification */}
+        {actionMessage && (
+          <div className={`alert-banner ${actionMessageType}`} role="status">
+            <div className="alert-content">
+              {actionMessageType === "success" && <Check size={18} />}
+              {actionMessageType === "error" && <AlertCircle size={18} />}
+              <span>{actionMessage}</span>
             </div>
-
-            <div className="updated-time">
-              <Clock size={15} />
-              Updated: {formatTime()}
-            </div>
+            <button
+              className="alert-close-btn"
+              onClick={() => setActionMessage("")}
+              aria-label="Dismiss message"
+            >
+              ✕
+            </button>
           </div>
+        )}
 
-          {error && (
-            <div className="error-message">
-              <p>{error}</p>
+        {/* =========================================================
+            PAGE 1: OVERVIEW
+            ========================================================= */}
+        {activePage === "Overview" && (
+          <div className="view-wrapper">
+            <div className="page-header">
+              <div>
+                <h2>Parking Overview</h2>
+                <p>Live status and overall occupancy across the parking facility.</p>
+              </div>
+            </div>
 
+            {/* 5 KPI Stat Cards */}
+            <div className="kpi-grid">
+              {statusCards.map((card) => {
+                const Icon = card.icon;
+                return (
+                  <div className={`kpi-card ${card.color}`} key={card.title}>
+                    <div className="kpi-card-top">
+                      <span className="kpi-title">{card.title}</span>
+                      <div className={`kpi-icon ${card.color}`}>
+                        <Icon size={18} />
+                      </div>
+                    </div>
+                    <div className="kpi-number tabular-nums">
+                      {loading ? "..." : card.value}
+                    </div>
+                    <div className="kpi-subtext">{card.subtext}</div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Floor Overview Section Preview */}
+            <div className="section-title-bar">
+              <div>
+                <h3>Floor Availability</h3>
+                <p>Real-time slot availability for each basement level</p>
+              </div>
               <button
-                onClick={fetchDashboardData}
-                disabled={loading || refreshing}
+                className="section-link-btn"
+                onClick={() => setActivePage("Floor Overview")}
               >
-                Try Again
+                View Detailed Floor Status ➜
               </button>
             </div>
-          )}
 
-          {/* Overview */}
-          {activePage === "Overview" && (
-            <>
-              <div className="stats-grid">
-                {statusCards.map((card) => {
-                  const Icon = card.icon;
+            <div className="floor-cards-grid">
+              {["B1", "B2"].map((floor) => {
+                const floorData = stats?.floorStats?.[floor] || {
+                  total: 0,
+                  available: 0,
+                  occupied: 0,
+                  reserved: 0,
+                  maintenance: 0
+                };
 
-                  return (
-                    <div className="stat-card" key={card.title}>
-                      <div className={`stat-icon ${card.color}`}>
-                        <Icon size={23} />
+                const percentage = floorData.total
+                  ? Math.round((floorData.available / floorData.total) * 100)
+                  : 0;
+
+                return (
+                  <div className="floor-card" key={floor}>
+                    <div className="floor-card-header">
+                      <div className="floor-meta">
+                        <span className="floor-pill">{floor}</span>
+                        <div>
+                          <h4>
+                            {floor === "B1" ? "Basement Level 1" : "Basement Level 2"}
+                          </h4>
+                          <span className="floor-sub">
+                            {floorData.total} total spaces
+                          </span>
+                        </div>
                       </div>
-
-                      <div>
-                        <p>{card.title}</p>
-                        <h2>{loading ? "..." : card.value}</h2>
+                      <div className="floor-stat-highlight">
+                        <span className="avail-percent tabular-nums">{percentage}%</span>
+                        <span className="avail-label">Available</span>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
 
-              <div className="section-heading">
-                <div>
-                  <h2>Floor Overview</h2>
-                  <p>Parking availability on each floor</p>
-                </div>
-              </div>
+                    <div className="progress-container">
+                      <div
+                        className="progress-bar-fill"
+                        style={{ width: `${percentage}%` }}
+                      ></div>
+                    </div>
 
-              <div className="floor-grid">
-                {["B1", "B2"].map((floor) => {
-                  const floorData = stats?.floorStats?.[floor] || {
-                    total: 0,
-                    available: 0,
-                    occupied: 0,
-                    reserved: 0,
-                    maintenance: 0
-                  };
-
-                  const percentage = floorData.total
-                    ? Math.round(
-                        (floorData.available / floorData.total) * 100
-                      )
-                    : 0;
-
-                  return (
-                    <div className="floor-card" key={floor}>
-                      <div className="floor-header">
-                        <div className="floor-title">
-                          <div className="floor-icon">
-                            <MapPin size={20} />
-                          </div>
-
-                          <div>
-                            <h3>{floor}</h3>
-                            <p>
-                              {floor === "B1"
-                                ? "Basement Level 1"
-                                : "Basement Level 2"}
-                            </p>
-                          </div>
-                        </div>
-
-                        <span className="floor-total">
-                          {floorData.total} slots
-                        </span>
+                    <div className="floor-breakdown-row">
+                      <div className="breakdown-item">
+                        <span className="indicator-dot green"></span>
+                        <span className="breakdown-label">Available</span>
+                        <strong className="breakdown-val tabular-nums">
+                          {floorData.available}
+                        </strong>
                       </div>
-
-                      <div className="availability-info">
-                        <span>Available spaces</span>
-                        <strong>{percentage}%</strong>
+                      <div className="breakdown-item">
+                        <span className="indicator-dot terracotta"></span>
+                        <span className="breakdown-label">Occupied</span>
+                        <strong className="breakdown-val tabular-nums">
+                          {floorData.occupied}
+                        </strong>
                       </div>
-
-                      <div className="progress-track">
-                        <div
-                          className="progress-fill"
-                          style={{ width: `${percentage}%` }}
-                        />
+                      <div className="breakdown-item">
+                        <span className="indicator-dot slate"></span>
+                        <span className="breakdown-label">Reserved</span>
+                        <strong className="breakdown-val tabular-nums">
+                          {floorData.reserved}
+                        </strong>
                       </div>
-
-                      <div className="floor-statistics">
-                        <div>
-                          <span className="legend-dot available-dot"></span>
-                          Available
-                          <strong>{floorData.available}</strong>
-                        </div>
-
-                        <div>
-                          <span className="legend-dot occupied-dot"></span>
-                          Occupied
-                          <strong>{floorData.occupied}</strong>
-                        </div>
-
-                        <div>
-                          <span className="legend-dot reserved-dot"></span>
-                          Reserved
-                          <strong>{floorData.reserved}</strong>
-                        </div>
-
-                        <div>
-                          <span className="legend-dot maintenance-dot"></span>
-                          Maintenance
-                          <strong>{floorData.maintenance}</strong>
-                        </div>
+                      <div className="breakdown-item">
+                        <span className="indicator-dot amber"></span>
+                        <span className="breakdown-label">Maintenance</span>
+                        <strong className="breakdown-val tabular-nums">
+                          {floorData.maintenance}
+                        </strong>
                       </div>
                     </div>
-                  );
-                })}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Recent Parking Slots */}
+            <div className="section-title-bar space-above">
+              <div>
+                <h3>Recent Parking Slots</h3>
+                <p>Latest slots registered in the system database</p>
               </div>
+              <button
+                className="section-link-btn"
+                onClick={() => setActivePage("Parking Slots")}
+              >
+                View All Slots ➜
+              </button>
+            </div>
 
-              <div className="section-heading">
-                <div>
-                  <h2>Recent Parking Slots</h2>
-                  <p>Latest slots from the parking database</p>
-                </div>
-
-                <button
-                  className="view-all-button"
-                  onClick={() => setActivePage("Parking Slots")}
-                >
-                  View all
-                </button>
-              </div>
-
-              <div className="table-container">
-                <table>
-                  <thead>
+            <div className="table-card">
+              <table className="standard-table">
+                <thead>
+                  <tr>
+                    <th>Slot ID</th>
+                    <th>Floor</th>
+                    <th>Vehicle Type</th>
+                    <th>Accessibility</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
                     <tr>
-                      <th>Slot ID</th>
-                      <th>Floor</th>
-                      <th>Vehicle Type</th>
-                      <th>Accessibility</th>
-                      <th>Status</th>
+                      <td colSpan="5" className="empty-message">
+                        Loading parking slots...
+                      </td>
                     </tr>
-                  </thead>
-
-                  <tbody>
-                    {loading ? (
-                      <tr>
-                        <td colSpan="5" className="empty-state">
-                          Loading parking slots...
+                  ) : sortedSlots.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" className="empty-message">
+                        No parking slots found.
+                      </td>
+                    </tr>
+                  ) : (
+                    sortedSlots.slice(0, 6).map((slot) => (
+                      <tr key={slot.slotId}>
+                        <td className="slot-id-cell">{slot.slotId}</td>
+                        <td>Level {slot.floor}</td>
+                        <td>{slot.vehicleType?.join(", ").toUpperCase()}</td>
+                        <td>
+                          {slot.accessible ? (
+                            <span className="badge-accessible">♿ Accessible</span>
+                          ) : (
+                            <span className="badge-standard">Standard</span>
+                          )}
+                        </td>
+                        <td>
+                          <span className={getStatusClass(slot.status)}>
+                            {slot.status}
+                          </span>
                         </td>
                       </tr>
-                    ) : sortedSlots.length === 0 ? (
-                      <tr>
-                        <td colSpan="5" className="empty-state">
-                          No parking slots found.
-                        </td>
-                      </tr>
-                    ) : (
-                      sortedSlots.slice(0, 6).map((slot) => (
-                        <tr key={slot.slotId}>
-                          <td className="slot-id">{slot.slotId}</td>
-                          <td>{slot.floor}</td>
-                          <td>{slot.vehicleType?.join(", ")}</td>
-                          <td>{slot.accessible ? "Yes" : "No"}</td>
-                          <td>
-                            <span className={getStatusClass(slot.status)}>
-                              {slot.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* =========================================================
+            PAGE 2: FLOOR OVERVIEW
+            ========================================================= */}
+        {activePage === "Floor Overview" && (
+          <div className="view-wrapper">
+            <div className="page-header">
+              <div>
+                <h2>Floor Overview</h2>
+                <p>Detailed floor-by-floor occupancy, capacity, and slot allocation.</p>
               </div>
-            </>
-          )}
+            </div>
 
-          {/* Parking Slots */}
-          {activePage === "Parking Slots" && (
-            <>
-              <div className="section-heading">
-                <div>
-                  <h2>All Parking Slots</h2>
-                  <p>View and manage all registered parking spaces</p>
-                </div>
+            <div className="floor-cards-grid large">
+              {["B1", "B2"].map((floor) => {
+                const floorData = stats?.floorStats?.[floor] || {
+                  total: 0,
+                  available: 0,
+                  occupied: 0,
+                  reserved: 0,
+                  maintenance: 0
+                };
 
-                <button
-                  className="add-slot-button"
-                  onClick={() => {
-                    setShowAddForm((previous) => !previous);
-                    setActionMessage("");
-                  }}
-                >
-                  <Plus size={16} />
-                  {showAddForm ? "Cancel" : "Add New Slot"}
-                </button>
-              </div>
+                const percentage = floorData.total
+                  ? Math.round((floorData.available / floorData.total) * 100)
+                  : 0;
 
-              {/* Add slot form */}
-              {showAddForm && (
-                <form className="add-slot-form" onSubmit={handleAddSlot}>
-                  <h3>Register New Parking Slot</h3>
+                const floorSlotsList = sortedSlots.filter((s) => s.floor === floor);
 
-                  <div className="form-grid">
+                return (
+                  <div className="floor-card detailed" key={floor}>
+                    <div className="floor-card-header">
+                      <div className="floor-meta">
+                        <span className="floor-pill">{floor}</span>
+                        <div>
+                          <h4>
+                            {floor === "B1" ? "Basement Level 1" : "Basement Level 2"}
+                          </h4>
+                          <span className="floor-sub">
+                            {floorData.total} Total Registered Slots
+                          </span>
+                        </div>
+                      </div>
 
-                    <div className="form-group">
-                      <label htmlFor="slotId">Slot ID</label>
-                      <input
-                        id="slotId"
-                        type="text"
-                        placeholder="Example: B1-A13"
-                        value={newSlot.slotId}
-                        onChange={(e) =>
-                          updateNewSlot("slotId", e.target.value)
-                        }
-                        required
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="floor">Floor</label>
-                      <select
-                        id="floor"
-                        value={newSlot.floor}
-                        onChange={(e) =>
-                          updateNewSlot("floor", e.target.value)
-                        }
-                      >
-                        <option value="B1">B1</option>
-                        <option value="B2">B2</option>
-                      </select>
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="nodeId">Graph Node ID</label>
-                      <input
-                        id="nodeId"
-                        type="text"
-                        placeholder="Example: B1-A13"
-                        value={newSlot.nodeId}
-                        onChange={(e) =>
-                          updateNewSlot("nodeId", e.target.value)
-                        }
-                        required
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="xCoordinate">X Coordinate</label>
-                      <input
-                        id="xCoordinate"
-                        type="number"
-                        placeholder="Enter X coordinate"
-                        value={newSlot.x}
-                        onChange={(e) =>
-                          updateNewSlot("x", e.target.value)
-                        }
-                        required
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="yCoordinate">Y Coordinate</label>
-                      <input
-                        id="yCoordinate"
-                        type="number"
-                        placeholder="Enter Y coordinate"
-                        value={newSlot.y}
-                        onChange={(e) =>
-                          updateNewSlot("y", e.target.value)
-                        }
-                        required
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label>Vehicle Type</label>
-
-                      <div className="vehicle-options">
-                        <label>
-                          <input
-                            type="checkbox"
-                            checked={newSlot.vehicleType.includes("car")}
-                            onChange={(e) => {
-                              const types = e.target.checked
-                                ? [...newSlot.vehicleType, "car"]
-                                : newSlot.vehicleType.filter(
-                                    (type) => type !== "car"
-                                  );
-
-                              updateNewSlot("vehicleType", types);
-                            }}
-                          />
-                          Car
-                        </label>
-
-                        <label>
-                          <input
-                            type="checkbox"
-                            checked={newSlot.vehicleType.includes("bike")}
-                            onChange={(e) => {
-                              const types = e.target.checked
-                                ? [...newSlot.vehicleType, "bike"]
-                                : newSlot.vehicleType.filter(
-                                    (type) => type !== "bike"
-                                  );
-
-                              updateNewSlot("vehicleType", types);
-                            }}
-                          />
-                          Bike
-                        </label>
+                      <div className="floor-stat-highlight">
+                        <span className="avail-percent tabular-nums">{percentage}%</span>
+                        <span className="avail-label">Available Spaces</span>
                       </div>
                     </div>
 
-                    <div className="form-group checkbox-group">
-                      <label>
-                        <input
-                          type="checkbox"
-                          checked={newSlot.accessible}
-                          onChange={(e) =>
-                            updateNewSlot("accessible", e.target.checked)
-                          }
-                        />
-                        Accessible parking slot
-                      </label>
+                    <div className="progress-container">
+                      <div
+                        className="progress-bar-fill"
+                        style={{ width: `${percentage}%` }}
+                      ></div>
                     </div>
 
+                    <div className="floor-breakdown-row">
+                      <div className="breakdown-item">
+                        <span className="indicator-dot green"></span>
+                        <span className="breakdown-label">Available</span>
+                        <strong className="breakdown-val tabular-nums">
+                          {floorData.available}
+                        </strong>
+                      </div>
+                      <div className="breakdown-item">
+                        <span className="indicator-dot terracotta"></span>
+                        <span className="breakdown-label">Occupied</span>
+                        <strong className="breakdown-val tabular-nums">
+                          {floorData.occupied}
+                        </strong>
+                      </div>
+                      <div className="breakdown-item">
+                        <span className="indicator-dot slate"></span>
+                        <span className="breakdown-label">Reserved</span>
+                        <strong className="breakdown-val tabular-nums">
+                          {floorData.reserved}
+                        </strong>
+                      </div>
+                      <div className="breakdown-item">
+                        <span className="indicator-dot amber"></span>
+                        <span className="breakdown-label">Maintenance</span>
+                        <strong className="breakdown-val tabular-nums">
+                          {floorData.maintenance}
+                        </strong>
+                      </div>
+                    </div>
+
+                    {/* Floor Slots Grid Preview */}
+                    <div className="floor-slots-preview">
+                      <span className="preview-heading">
+                        Registered Slots on Level {floor} ({floorSlotsList.length})
+                      </span>
+                      <div className="slots-chips-grid">
+                        {floorSlotsList.map((slot) => (
+                          <div
+                            key={slot.slotId}
+                            className={`slot-chip ${slot.status}`}
+                            title={`${slot.slotId} - ${slot.status}`}
+                          >
+                            <span className="chip-slot-id">{slot.slotId}</span>
+                            <span className="chip-slot-status">{slot.status}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* =========================================================
+            PAGE 3: PARKING SLOTS
+            ========================================================= */}
+        {activePage === "Parking Slots" && (
+          <div className="view-wrapper">
+            <div className="page-header with-action">
+              <div>
+                <h2>Parking Slots Management</h2>
+                <p>Register, update, filter, and manage all parking spaces.</p>
+              </div>
+
+              <button
+                className="primary-btn"
+                onClick={() => {
+                  setShowAddForm((prev) => !prev);
+                  setActionMessage("");
+                }}
+              >
+                <Plus size={16} />
+                <span>{showAddForm ? "Cancel" : "Add New Slot"}</span>
+              </button>
+            </div>
+
+            {/* Add Slot Form */}
+            {showAddForm && (
+              <form className="form-card" onSubmit={handleAddSlot}>
+                <div className="form-card-title">
+                  <Plus size={18} />
+                  <h3>Register New Parking Slot</h3>
+                </div>
+
+                <div className="form-fields-grid">
+                  <div className="field-group">
+                    <label htmlFor="slotId">Slot ID</label>
+                    <input
+                      id="slotId"
+                      type="text"
+                      placeholder="e.g. B1-A13"
+                      value={newSlot.slotId}
+                      onChange={(e) => updateNewSlot("slotId", e.target.value)}
+                      required
+                    />
                   </div>
 
-                  <p className="form-note">
-                    New slots are initially registered as Available.
-                    Ensure the corresponding node is connected in the
-                    parking graph before using route recommendations.
-                  </p>
+                  <div className="field-group">
+                    <label htmlFor="floor">Floor Level</label>
+                    <select
+                      id="floor"
+                      value={newSlot.floor}
+                      onChange={(e) => updateNewSlot("floor", e.target.value)}
+                    >
+                      <option value="B1">Basement Level 1 (B1)</option>
+                      <option value="B2">Basement Level 2 (B2)</option>
+                    </select>
+                  </div>
 
+                  <div className="field-group">
+                    <label htmlFor="nodeId">Graph Node ID</label>
+                    <input
+                      id="nodeId"
+                      type="text"
+                      placeholder="e.g. B1-A13"
+                      value={newSlot.nodeId}
+                      onChange={(e) => updateNewSlot("nodeId", e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="field-group">
+                    <label htmlFor="xCoordinate">X Coordinate</label>
+                    <input
+                      id="xCoordinate"
+                      type="number"
+                      placeholder="e.g. 24"
+                      value={newSlot.x}
+                      onChange={(e) => updateNewSlot("x", e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="field-group">
+                    <label htmlFor="yCoordinate">Y Coordinate</label>
+                    <input
+                      id="yCoordinate"
+                      type="number"
+                      placeholder="e.g. -5"
+                      value={newSlot.y}
+                      onChange={(e) => updateNewSlot("y", e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="field-group">
+                    <label>Vehicle Compatibility</label>
+                    <div className="checkboxes-row">
+                      <label className="checkbox-label">
+                        <input
+                          type="checkbox"
+                          checked={newSlot.vehicleType.includes("car")}
+                          onChange={(e) => {
+                            const types = e.target.checked
+                              ? [...newSlot.vehicleType, "car"]
+                              : newSlot.vehicleType.filter((t) => t !== "car");
+                            updateNewSlot("vehicleType", types);
+                          }}
+                        />
+                        <span>Car</span>
+                      </label>
+                      <label className="checkbox-label">
+                        <input
+                          type="checkbox"
+                          checked={newSlot.vehicleType.includes("bike")}
+                          onChange={(e) => {
+                            const types = e.target.checked
+                              ? [...newSlot.vehicleType, "bike"]
+                              : newSlot.vehicleType.filter((t) => t !== "bike");
+                            updateNewSlot("vehicleType", types);
+                          }}
+                        />
+                        <span>Bike</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="field-group span-full">
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={newSlot.accessible}
+                        onChange={(e) => updateNewSlot("accessible", e.target.checked)}
+                      />
+                      <span>Accessible Parking Slot (PRM / Disability)</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="form-card-footer">
+                  <p className="form-hint">
+                    New slots are initialized as Available.
+                  </p>
                   <button
                     type="submit"
-                    className="submit-slot-button"
+                    className="primary-btn"
                     disabled={addingSlot}
                   >
-                    {addingSlot ? "Adding..." : "Save Parking Slot"}
+                    {addingSlot ? "Saving..." : "Save Parking Slot"}
                   </button>
-                </form>
-              )}
-              
-              {/* Edit slot form */}
-              {showEditForm && editingSlot && (
-                <form className="add-slot-form" onSubmit={handleEditSubmit}>
+                </div>
+              </form>
+            )}
+
+            {/* Edit Slot Form */}
+            {showEditForm && editingSlot && (
+              <form className="form-card edit" onSubmit={handleEditSubmit}>
+                <div className="form-card-title">
+                  <Pencil size={18} />
                   <h3>Edit Parking Slot: {editingSlot.slotId}</h3>
+                </div>
 
-                  <div className="form-grid">
-
-                    <div className="form-group">
-                      <label htmlFor="editFloor">Floor</label>
-                      <select
-                        id="editFloor"
-                        value={editingSlot.floor}
-                        onChange={(e) =>
-                          setEditingSlot({
-                            ...editingSlot,
-                            floor: e.target.value
-                          })
-                        }
-                      >
-                        <option value="B1">B1</option>
-                        <option value="B2">B2</option>
-                      </select>
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="editNodeId">Graph Node ID</label>
-                      <input
-                        id="editNodeId"
-                        type="text"
-                        value={editingSlot.nodeId}
-                        onChange={(e) =>
-                          setEditingSlot({
-                            ...editingSlot,
-                            nodeId: e.target.value
-                          })
-                        }
-                        required
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="editXCoordinate">X Coordinate</label>
-                      <input
-                        id="editXCoordinate"
-                        type="number"
-                        value={editingSlot.x}
-                        onChange={(e) =>
-                          setEditingSlot({
-                            ...editingSlot,
-                            x: e.target.value
-                          })
-                        }
-                        required
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label htmlFor="editYCoordinate">Y Coordinate</label>
-                      <input
-                        id="editYCoordinate"
-                        type="number"
-                        value={editingSlot.y}
-                        onChange={(e) =>
-                          setEditingSlot({
-                            ...editingSlot,
-                            y: e.target.value
-                          })
-                        }
-                        required
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label>Vehicle Type</label>
-
-                      <div className="vehicle-options">
-                        <label>
-                          <input
-                            type="checkbox"
-                            checked={editingSlot.vehicleType.includes("car")}
-                            onChange={(e) => {
-                              const types = e.target.checked
-                                ? [...editingSlot.vehicleType, "car"]
-                                : editingSlot.vehicleType.filter(
-                                    (type) => type !== "car"
-                                  );
-
-                              setEditingSlot({
-                                ...editingSlot,
-                                vehicleType: types
-                              });
-                            }}
-                          />
-                          Car
-                        </label>
-
-                        <label>
-                          <input
-                            type="checkbox"
-                            checked={editingSlot.vehicleType.includes("bike")}
-                            onChange={(e) => {
-                              const types = e.target.checked
-                                ? [...editingSlot.vehicleType, "bike"]
-                                : editingSlot.vehicleType.filter(
-                                    (type) => type !== "bike"
-                                  );
-
-                              setEditingSlot({
-                                ...editingSlot,
-                                vehicleType: types
-                              });
-                            }}
-                          />
-                          Bike
-                        </label>
-                      </div>
-                    </div>
-
-                    <div className="form-group checkbox-group">
-                      <label>
-                        <input
-                          type="checkbox"
-                          checked={editingSlot.accessible}
-                          onChange={(e) =>
-                            setEditingSlot({
-                              ...editingSlot,
-                              accessible: e.target.checked
-                            })
-                          }
-                        />
-                        Accessible parking slot
-                      </label>
-                    </div>
-
+                <div className="form-fields-grid">
+                  <div className="field-group">
+                    <label htmlFor="editFloor">Floor Level</label>
+                    <select
+                      id="editFloor"
+                      value={editingSlot.floor}
+                      onChange={(e) =>
+                        setEditingSlot({ ...editingSlot, floor: e.target.value })
+                      }
+                    >
+                      <option value="B1">Basement Level 1 (B1)</option>
+                      <option value="B2">Basement Level 2 (B2)</option>
+                    </select>
                   </div>
 
-                  <p className="form-note">
-                    Slot ID and current status will remain unchanged.
-                    Make sure the graph node exists before saving.
-                  </p>
+                  <div className="field-group">
+                    <label htmlFor="editNodeId">Graph Node ID</label>
+                    <input
+                      id="editNodeId"
+                      type="text"
+                      value={editingSlot.nodeId}
+                      onChange={(e) =>
+                        setEditingSlot({ ...editingSlot, nodeId: e.target.value })
+                      }
+                      required
+                    />
+                  </div>
 
-                  <div className="edit-form-actions">
+                  <div className="field-group">
+                    <label htmlFor="editXCoordinate">X Coordinate</label>
+                    <input
+                      id="editXCoordinate"
+                      type="number"
+                      value={editingSlot.x}
+                      onChange={(e) =>
+                        setEditingSlot({ ...editingSlot, x: e.target.value })
+                      }
+                      required
+                    />
+                  </div>
+
+                  <div className="field-group">
+                    <label htmlFor="editYCoordinate">Y Coordinate</label>
+                    <input
+                      id="editYCoordinate"
+                      type="number"
+                      value={editingSlot.y}
+                      onChange={(e) =>
+                        setEditingSlot({ ...editingSlot, y: e.target.value })
+                      }
+                      required
+                    />
+                  </div>
+
+                  <div className="field-group">
+                    <label>Vehicle Compatibility</label>
+                    <div className="checkboxes-row">
+                      <label className="checkbox-label">
+                        <input
+                          type="checkbox"
+                          checked={editingSlot.vehicleType.includes("car")}
+                          onChange={(e) => {
+                            const types = e.target.checked
+                              ? [...editingSlot.vehicleType, "car"]
+                              : editingSlot.vehicleType.filter((t) => t !== "car");
+                            setEditingSlot({ ...editingSlot, vehicleType: types });
+                          }}
+                        />
+                        <span>Car</span>
+                      </label>
+                      <label className="checkbox-label">
+                        <input
+                          type="checkbox"
+                          checked={editingSlot.vehicleType.includes("bike")}
+                          onChange={(e) => {
+                            const types = e.target.checked
+                              ? [...editingSlot.vehicleType, "bike"]
+                              : editingSlot.vehicleType.filter((t) => t !== "bike");
+                            setEditingSlot({ ...editingSlot, vehicleType: types });
+                          }}
+                        />
+                        <span>Bike</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="field-group span-full">
+                    <label className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={editingSlot.accessible}
+                        onChange={(e) =>
+                          setEditingSlot({ ...editingSlot, accessible: e.target.checked })
+                        }
+                      />
+                      <span>Accessible Parking Slot (PRM / Disability)</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="form-card-footer">
+                  <div className="btn-group">
                     <button
                       type="submit"
-                      className="submit-slot-button"
+                      className="primary-btn"
                       disabled={savingEdit}
                     >
-                      {savingEdit ? "Saving..." : "Save Changes"}
+                      {savingEdit ? "Saving..." : "Update Slot"}
                     </button>
-
                     <button
                       type="button"
-                      className="cancel-edit-button"
+                      className="secondary-btn"
                       onClick={() => {
                         setShowEditForm(false);
                         setEditingSlot(null);
@@ -1117,181 +1173,187 @@ const handleEditSubmit = async (e) => {
                       Cancel
                     </button>
                   </div>
-                </form>
-              )}
-
-              {actionMessage && (
-                <div
-                  className={`action-message ${actionMessageType}`}
-                  role="status"
-                >
-                  {actionMessage}
                 </div>
-              )}
+              </form>
+            )}
 
-              {/* Filters */}
-              <div className="filter-panel">
-                <div className="search-box">
-                  <Search size={18} />
-
-                  <input
-                    type="text"
-                    placeholder="Search slot ID..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                </div>
-
-                <select
-                  value={selectedFloor}
-                  onChange={(e) => setSelectedFloor(e.target.value)}
-                >
-                  <option value="All">All Floors</option>
-                  <option value="B1">B1</option>
-                  <option value="B2">B2</option>
-                </select>
-
-                <select
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
-                >
-                  <option value="All">All Statuses</option>
-                  <option value="available">Available</option>
-                  <option value="occupied">Occupied</option>
-                  <option value="reserved">Reserved</option>
-                  <option value="maintenance">Maintenance</option>
-                </select>
-                {/* Accessible filter */}
-                <select
-                  value={selectedAccessible}
-                  onChange={(e) => setSelectedAccessible(e.target.value)}
-                >
-                  <option value="All">All Accessibility</option>
-                  <option value="true">Accessible</option>
-                  <option value="false">Non-Accessible</option>
-                </select>
+            {/* Filter Toolbar */}
+            <div className="filter-toolbar">
+              <div className="search-input-box">
+                <Search size={16} />
+                <input
+                  type="text"
+                  placeholder="Search by Slot ID (e.g. B1-A01)..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
               </div>
 
-              {/* Slots table */}
-              <div className="table-container">
-                <table>
-                  <thead>
+              <select
+                value={selectedFloor}
+                onChange={(e) => setSelectedFloor(e.target.value)}
+                aria-label="Filter by floor"
+              >
+                <option value="All">All Floors</option>
+                <option value="B1">Floor B1</option>
+                <option value="B2">Floor B2</option>
+              </select>
+
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value)}
+                aria-label="Filter by status"
+              >
+                <option value="All">All Statuses</option>
+                <option value="available">Available</option>
+                <option value="occupied">Occupied</option>
+                <option value="reserved">Reserved</option>
+                <option value="maintenance">Maintenance</option>
+              </select>
+
+              <select
+                value={selectedAccessible}
+                onChange={(e) => setSelectedAccessible(e.target.value)}
+                aria-label="Filter by accessibility"
+              >
+                <option value="All">All Accessibility</option>
+                <option value="true">Accessible Only</option>
+                <option value="false">Standard Only</option>
+              </select>
+            </div>
+
+            {/* Slots Table */}
+            <div className="table-card">
+              <table className="standard-table">
+                <thead>
+                  <tr>
+                    <th>Slot ID</th>
+                    <th>Floor</th>
+                    <th>Vehicle Type</th>
+                    <th>Accessibility</th>
+                    <th>Status Management</th>
+                    <th style={{ textAlign: "right" }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
                     <tr>
-                      <th>Slot ID</th>
-                      <th>Floor</th>
-                      <th>Vehicle Type</th>
-                      <th>Accessible</th>
-                      <th>Status Management</th>
+                      <td colSpan="6" className="empty-message">
+                        Loading parking slots...
+                      </td>
                     </tr>
-                  </thead>
-
-                  <tbody>
-                    {loading ? (
-                      <tr>
-                        <td colSpan="5" className="empty-state">
-                          Loading parking slots...
+                  ) : filteredSlots.length === 0 ? (
+                    <tr>
+                      <td colSpan="6" className="empty-message">
+                        No matching parking slots found.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredSlots.map((slot) => (
+                      <tr key={slot.slotId}>
+                        <td className="slot-id-cell">{slot.slotId}</td>
+                        <td>Level {slot.floor}</td>
+                        <td>{slot.vehicleType?.join(", ").toUpperCase()}</td>
+                        <td>
+                          {slot.accessible ? (
+                            <span className="badge-accessible">♿ Accessible</span>
+                          ) : (
+                            <span className="badge-standard">Standard</span>
+                          )}
                         </td>
-                      </tr>
-                    ) : filteredSlots.length === 0 ? (
-                      <tr>
-                        <td colSpan="5" className="empty-state">
-                          No matching parking slots found.
+                        <td>
+                          <div className="status-inline-control">
+                            <span className={getStatusClass(slot.status)}>
+                              {slot.status}
+                            </span>
+                            <select
+                              className="status-dropdown-select"
+                              value={slot.status}
+                              disabled={updatingSlotId === slot.slotId}
+                              onChange={(e) =>
+                                handleStatusChange(slot.slotId, e.target.value)
+                              }
+                            >
+                              <option value="available">Available</option>
+                              <option value="occupied">Occupied</option>
+                              <option value="reserved">Reserved</option>
+                              <option value="maintenance">Maintenance</option>
+                            </select>
+                            {updatingSlotId === slot.slotId && (
+                              <span className="saving-text">Saving...</span>
+                            )}
+                          </div>
                         </td>
-                      </tr>
-                    ) : (
-                      filteredSlots.map((slot) => (
-                        <tr key={slot.slotId}>
-                          <td className="slot-id">{slot.slotId}</td>
-                          <td>{slot.floor}</td>
-                          <td>{slot.vehicleType?.join(", ")}</td>
-                          <td>{slot.accessible ? "Yes" : "No"}</td>
-
-                          <td>
-                            <div className="status-management">
-                              <span className={getStatusClass(slot.status)}>
-                                {slot.status}
+                        <td style={{ textAlign: "right" }}>
+                          <div className="actions-cell">
+                            <button
+                              className="action-btn edit"
+                              onClick={() => handleEditClick(slot)}
+                              disabled={
+                                deletingSlotId === slot.slotId ||
+                                updatingSlotId === slot.slotId
+                              }
+                              title="Edit slot details"
+                            >
+                              <Pencil size={14} />
+                              <span>Edit</span>
+                            </button>
+                            <button
+                              className="action-btn delete"
+                              onClick={() => handleDeleteSlot(slot.slotId)}
+                              disabled={
+                                deletingSlotId === slot.slotId ||
+                                updatingSlotId === slot.slotId
+                              }
+                              title="Delete slot"
+                            >
+                              <Trash2 size={14} />
+                              <span>
+                                {deletingSlotId === slot.slotId
+                                  ? "..."
+                                  : "Delete"}
                               </span>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
 
-                              <select
-                                className="status-select"
-                                value={slot.status}
-                                disabled={updatingSlotId === slot.slotId}
-                                onChange={(e) =>
-                                  handleStatusChange(
-                                    slot.slotId,
-                                    e.target.value
-                                  )
-                                }
-                              >
-                                <option value="available">Available</option>
-                                <option value="occupied">Occupied</option>
-                                <option value="reserved">Reserved</option>
-                                <option value="maintenance">Maintenance</option>
-                              </select>
+            <p className="table-footer-count">
+              Showing {filteredSlots.length} of {slots.length} parking slots
+            </p>
+          </div>
+        )}
 
-                              {updatingSlotId === slot.slotId && (
-                                <span className="updating-text">
-                                  Saving...
-                                </span>
-                              )}
-                              <button
-                                className="delete-slot-button"
-                                onClick={() => handleDeleteSlot(slot.slotId)}
-                                disabled={
-                                  deletingSlotId === slot.slotId ||
-                                  updatingSlotId === slot.slotId
-                                }
-                                title="Delete parking slot"
-                              >
-                                <Trash2 size={16} />
-                                {deletingSlotId === slot.slotId ? "Deleting..." : "Delete"}
-                              </button>
-                              <button
-                                className="edit-slot-button"
-                                onClick={() => handleEditClick(slot)}
-                                disabled={
-                                  deletingSlotId === slot.slotId ||
-                                  updatingSlotId === slot.slotId
-                                }
-                                title="Edit parking slot"
-                              >
-                                <Pencil size={16} />
-                                Edit
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-
-              <p className="results-count">
-                Showing {filteredSlots.length} of {slots.length} parking slots
-              </p>
-            </>
-          )}
-
-          {/* Reservations */}
-          {activePage === "Reservations" && (
+        {/* =========================================================
+            PAGE 4: RESERVATIONS
+            ========================================================= */}
+        {activePage === "Reservations" && (
+          <div className="view-wrapper">
             <ReservationsView
               apiUrl={RESERVATIONS_API_URL}
               onRefreshSlots={fetchDashboardData}
             />
-          )}
-
-          <footer className="dashboard-footer">
-            <div>
-              <Activity size={16} />
-              Smart Mall Parking Management System
-            </div>
-
-            <span>Admin Panel</span>
-          </footer>
-
-        </section>
+          </div>
+        )}
       </main>
+
+      {/* Clean Professional Footer */}
+      <footer className="simple-footer">
+        <div className="footer-container">
+          <div className="footer-left">
+            <Activity size={15} />
+            <span>ParkIQ • Smart Mall Parking Management System</span>
+          </div>
+          <div className="footer-right">
+            <span>Admin Operations Panel</span>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

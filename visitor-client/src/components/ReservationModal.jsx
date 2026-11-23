@@ -78,7 +78,7 @@ export default function ReservationModal({
     }
 
     if (!cleanPlate) {
-      setErrorMessage('Please enter your vehicle registration plate number.');
+      setErrorMessage('Please enter your vehicle license plate number.');
       setErrorStatus(400);
       return;
     }
@@ -101,22 +101,18 @@ export default function ReservationModal({
         vehicleType,
       });
 
-      // Reset form fields
+      // Clear local fields and trigger parent callback
       setCustomerName('');
       setVehicleNumber('');
       onSuccess(created);
     } catch (err) {
       setErrorStatus(err.status || 500);
       if (err.status === 409) {
-        setErrorMessage(
-          err.message || 'This parking slot is no longer available. Please choose another bay.'
-        );
+        setErrorMessage('This parking slot was just reserved by another visitor. Please select a different slot.');
       } else if (err.status === 400) {
-        setErrorMessage(err.message || 'Invalid reservation request. Please review your details.');
-      } else if (err.status === 404) {
-        setErrorMessage('This parking slot could not be found.');
+        setErrorMessage(err.message || 'Validation failed. Please verify vehicle details.');
       } else {
-        setErrorMessage(err.message || 'Server error occurred while making your reservation. Please try again.');
+        setErrorMessage(err.message || 'Unable to complete reservation. Please try again.');
       }
     } finally {
       setIsSubmitting(false);
@@ -124,32 +120,20 @@ export default function ReservationModal({
   };
 
   return (
-    <div className="reservation-modal-backdrop" onClick={!isSubmitting ? onClose : undefined}>
-      <div
-        className="reservation-modal-card"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="reservation-modal-title"
-      >
+    <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && !isSubmitting && onClose()}>
+      <div className="reservation-modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         {/* Modal Header */}
-        <div className="res-modal-header">
-          <div className="res-modal-title-wrap">
-            <div className="res-modal-icon-badge">
-              <ShieldCheck size={20} />
-            </div>
-            <div>
-              <h3 id="reservation-modal-title" className="res-modal-title">
-                Reserve Parking Bay
-              </h3>
-              <p className="res-modal-subtitle">
-                Guaranteed parking held for 30 minutes upon confirmation
-              </p>
-            </div>
+        <div className="modal-header">
+          <div className="modal-header-icon">
+            <ShieldCheck size={20} />
+          </div>
+          <div>
+            <h3 id="modal-title" className="modal-title">Reserve Parking Bay</h3>
+            <span className="modal-subtitle">Holds your selected space for 30 minutes</span>
           </div>
           <button
             type="button"
-            className="res-modal-close-btn"
+            className="modal-close-btn"
             onClick={onClose}
             disabled={isSubmitting}
             aria-label="Close reservation modal"
@@ -158,124 +142,114 @@ export default function ReservationModal({
           </button>
         </div>
 
-        {/* Slot Summary Pill Box */}
-        <div className="res-slot-summary-box">
-          <div className="res-slot-summary-main">
-            <span className="res-slot-summary-id">{slot.slotId}</span>
-            <span className={`rec-floor-badge floor-${slot.floor}`}>
-              Floor {slot.floor}
+        {/* Slot Quick Identity Banner */}
+        <div className="modal-slot-banner">
+          <div className="slot-banner-identity">
+            <span className="banner-slot-id">Bay {slot.slotId}</span>
+            <span className="banner-floor-badge">
+              <MapPin size={12} />
+              <span>Floor {slot.floor}</span>
             </span>
             {slot.accessible && (
-              <span className="rec-feature-tag accessible-tag">
+              <span className="banner-acc-badge">
                 <Accessibility size={12} />
-                <span>Priority Accessible</span>
+                <span>Accessible Priority</span>
               </span>
             )}
           </div>
-          <div className="res-slot-summary-meta">
-            <span>
-              <MapPin size={13} /> {slot.aisle || 'Designated Bay'}
-            </span>
-            <span>
-              <Clock size={13} /> 30 Min Hold Window
-            </span>
+          <div className="slot-banner-duration">
+            <Clock size={13} />
+            <span>30-Min Hold</span>
           </div>
         </div>
 
-        {/* Error Alert Banner */}
+        {/* Error notification banner if any */}
         {errorMessage && (
-          <div className={`res-modal-alert ${errorStatus === 409 ? 'alert-conflict' : 'alert-error'}`}>
-            <AlertCircle size={16} className="res-alert-icon" />
-            <div className="res-alert-content">
-              <strong>{errorStatus === 409 ? 'Slot Unavailable' : 'Booking Error'}</strong>
-              <p>{errorMessage}</p>
+          <div className="modal-error-banner" role="alert">
+            <AlertCircle size={16} />
+            <div>
+              <strong>Reservation Error:</strong> {errorMessage}
             </div>
           </div>
         )}
 
         {/* Reservation Form */}
-        <form onSubmit={handleSubmit} className="res-modal-form" noValidate>
-          {/* Customer Name */}
-          <div className="res-form-group">
-            <label htmlFor="customer-name" className="res-form-label">
-              Full Name <span className="req-star">*</span>
+        <form onSubmit={handleSubmit} className="modal-form">
+          <div className="form-group">
+            <label htmlFor="customerName" className="form-label">
+              Full Name <span className="required">*</span>
             </label>
             <input
-              id="customer-name"
+              id="customerName"
               type="text"
-              className="res-form-input"
-              placeholder="e.g. Rahul Sharma"
+              className="form-input"
+              placeholder="e.g. John Doe"
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
               disabled={isSubmitting}
               autoFocus
               maxLength={60}
-              required
             />
           </div>
 
-          {/* Vehicle Registration Plate */}
-          <div className="res-form-group">
-            <label htmlFor="vehicle-plate" className="res-form-label">
-              Vehicle Registration Number <span className="req-star">*</span>
+          <div className="form-group">
+            <label htmlFor="vehicleNumber" className="form-label">
+              Vehicle Registration / Plate Number <span className="required">*</span>
             </label>
             <input
-              id="vehicle-plate"
+              id="vehicleNumber"
               type="text"
-              className="res-form-input uppercase-input"
-              placeholder="e.g. DL 01 AB 1234"
+              className="form-input plate-input"
+              placeholder="e.g. MH-12-AB-1234"
               value={vehicleNumber}
               onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())}
               disabled={isSubmitting}
-              maxLength={20}
-              required
+              maxLength={15}
             />
-            <span className="res-form-hint">Used for gate verification and barrier clearance</span>
           </div>
 
-          {/* Vehicle Type Choice */}
-          <div className="res-form-group">
-            <label className="res-form-label">
-              Vehicle Category <span className="req-star">*</span>
-            </label>
-            <div className="res-vehicle-toggle-grid">
-              <button
-                type="button"
-                className={`res-vehicle-btn ${vehicleType === 'car' ? 'active' : ''}`}
-                onClick={() => setVehicleType('car')}
-                disabled={isSubmitting || !supportedTypes.includes('car')}
-                title={!supportedTypes.includes('car') ? 'Not supported by this bay' : ''}
-              >
-                <Car size={18} />
-                <span>Four-Wheeler (Car)</span>
-              </button>
-
-              <button
-                type="button"
-                className={`res-vehicle-btn ${vehicleType === 'bike' ? 'active' : ''}`}
-                onClick={() => setVehicleType('bike')}
-                disabled={isSubmitting || !supportedTypes.includes('bike')}
-                title={!supportedTypes.includes('bike') ? 'Not supported by this bay' : ''}
-              >
-                <Bike size={18} />
-                <span>Two-Wheeler (Bike)</span>
-              </button>
+          <div className="form-group">
+            <label className="form-label">Vehicle Type</label>
+            <div className="modal-vehicle-options">
+              {supportedTypes.includes('car') && (
+                <button
+                  type="button"
+                  className={`modal-veh-btn ${vehicleType === 'car' ? 'selected' : ''}`}
+                  onClick={() => setVehicleType('car')}
+                  disabled={isSubmitting}
+                >
+                  <Car size={16} />
+                  <span>Four-Wheeler (Car)</span>
+                </button>
+              )}
+              {supportedTypes.includes('bike') && (
+                <button
+                  type="button"
+                  className={`modal-veh-btn ${vehicleType === 'bike' ? 'selected' : ''}`}
+                  onClick={() => setVehicleType('bike')}
+                  disabled={isSubmitting}
+                >
+                  <Bike size={16} />
+                  <span>Two-Wheeler (Bike)</span>
+                </button>
+              )}
             </div>
           </div>
 
           {/* Policy Notice */}
-          <div className="res-policy-notice">
+          <div className="reservation-policy-notice">
             <CheckCircle2 size={14} className="notice-icon" />
-            <span>
-              Your reservation is automatically held for <strong>30 minutes</strong>. If not occupied by then, the slot will be released back to other mall visitors.
-            </span>
+            <p>
+              Your reservation is valid for <strong>30 minutes</strong> from confirmation. If not occupied,
+              the bay will automatically return to available status.
+            </p>
           </div>
 
-          {/* Action Buttons */}
-          <div className="res-modal-actions">
+          {/* Form Actions */}
+          <div className="modal-actions">
             <button
               type="button"
-              className="res-btn-cancel"
+              className="btn-cancel-modal"
               onClick={onClose}
               disabled={isSubmitting}
             >
@@ -283,18 +257,18 @@ export default function ReservationModal({
             </button>
             <button
               type="submit"
-              className="res-btn-submit"
+              className="btn-confirm-reservation"
               disabled={isSubmitting}
             >
               {isSubmitting ? (
                 <>
                   <Loader2 size={16} className="spin" />
-                  <span>Reserving Bay…</span>
+                  <span>Confirming…</span>
                 </>
               ) : (
                 <>
                   <ShieldCheck size={16} />
-                  <span>Confirm & Reserve Slot</span>
+                  <span>Confirm Reservation</span>
                 </>
               )}
             </button>

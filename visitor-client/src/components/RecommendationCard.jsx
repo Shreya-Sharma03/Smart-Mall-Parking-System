@@ -14,7 +14,6 @@ import {
   EyeOff,
   ChevronDown,
   ChevronUp,
-  ShieldCheck,
 } from 'lucide-react';
 
 export default function RecommendationCard({
@@ -23,7 +22,6 @@ export default function RecommendationCard({
   onToggleRoute,
   onSelectAlternative,
   activeRouteSlotId,
-  onOpenReservation,
 }) {
   const [showAlternatives, setShowAlternatives] = useState(false);
 
@@ -37,7 +35,7 @@ export default function RecommendationCard({
       <div className="recommendation-card empty-state">
         <div className="recommendation-header">
           <div className="rec-badge-icon warning">
-            <AlertCircle size={20} />
+            <AlertCircle size={18} />
           </div>
           <div>
             <h3 className="rec-title">No Available Bay Found</h3>
@@ -48,7 +46,7 @@ export default function RecommendationCard({
         <p className="rec-empty-message">{recommendation.message}</p>
 
         <div className="rec-empty-hint">
-          <span>Tip: Try deselecting the accessibility requirement or checking the other vehicle category.</span>
+          <span>Tip: Try unchecking the accessibility filter or changing the vehicle category.</span>
         </div>
       </div>
     );
@@ -58,7 +56,6 @@ export default function RecommendationCard({
   const { slot, distance, estimatedTime, estimatedTimeDesc, requiresFloorChange } = best;
 
   const isCurrentActive = isRouteActive && activeRouteSlotId === slot.slotId;
-  const isAvailable = slot.status === 'available';
 
   return (
     <div className={`recommendation-card ${isCurrentActive ? 'route-active' : ''}`}>
@@ -66,9 +63,9 @@ export default function RecommendationCard({
       <div className="rec-top-banner">
         <div className="rec-star-label">
           <Sparkles size={14} />
-          <span>OPTIMAL PARKING RECOMMENDATION</span>
+          <span>RECOMMENDED PARKING SLOT</span>
         </div>
-        <span className="rec-algorithm-tag">Dijkstra Shortest Path</span>
+        <span className="rec-algorithm-tag">Shortest Path</span>
       </div>
 
       {/* Main card body */}
@@ -83,7 +80,7 @@ export default function RecommendationCard({
 
           <div className="rec-metrics-cluster">
             <div className="metric-badge metric-distance" title="Total driving distance">
-              <Navigation2 size={14} className="metric-icon" />
+              <Navigation2 size={13} className="metric-icon" />
               <div>
                 <span className="metric-val">{distance}m</span>
                 <span className="metric-sub">Distance</span>
@@ -91,7 +88,7 @@ export default function RecommendationCard({
             </div>
 
             <div className="metric-badge metric-time" title={estimatedTimeDesc}>
-              <Clock size={14} className="metric-icon" />
+              <Clock size={13} className="metric-icon" />
               <div>
                 <span className="metric-val">{estimatedTime}</span>
                 <span className="metric-sub">Est. Travel</span>
@@ -125,12 +122,12 @@ export default function RecommendationCard({
           {requiresFloorChange && (
             <span className="rec-feature-tag ramp-transit-tag">
               <Layers size={13} />
-              <span>Take Ramp B1-R1 to B2</span>
+              <span>Take Ramp to Floor B2</span>
             </span>
           )}
         </div>
 
-        {/* Action Buttons: Visualize Route & Reserve Slot */}
+        {/* Action Button: Visualize Route */}
         <div className="rec-actions-cluster">
           <button
             type="button"
@@ -145,22 +142,10 @@ export default function RecommendationCard({
             ) : (
               <>
                 <Compass size={16} />
-                <span>Visualize Optimal Route</span>
+                <span>Show Navigation Route</span>
               </>
             )}
           </button>
-
-          {onOpenReservation && isAvailable && (
-            <button
-              type="button"
-              className="btn-rec-reserve-cta"
-              onClick={() => onOpenReservation(slot)}
-              title={`Reserve optimal bay ${slot.slotId} for 30 minutes`}
-            >
-              <ShieldCheck size={16} />
-              <span>Reserve Bay</span>
-            </button>
-          )}
         </div>
 
         {/* Alternative options section */}
@@ -172,12 +157,12 @@ export default function RecommendationCard({
               onClick={() => setShowAlternatives(!showAlternatives)}
             >
               <span>{alternatives.length} Alternative Slots Available</span>
-              {showAlternatives ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              {showAlternatives ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
             </button>
 
             {showAlternatives && (
               <div className="alternatives-list">
-                {alternatives.slice(0, 4).map((alt) => {
+                {alternatives.map((alt) => {
                   const isAltActive = isRouteActive && activeRouteSlotId === alt.slot.slotId;
                   return (
                     <div
